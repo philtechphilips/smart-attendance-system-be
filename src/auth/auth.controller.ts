@@ -6,6 +6,7 @@ import { LocalGuard } from './guards/local.guards';
 import { JwtAuthGuard } from './guards/jwt.guard';
 import { RegisterAuthDto } from './dto/register-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { Public } from './decorators/public.decorators';
 
 @Controller('auth')
 export class AuthController {
@@ -13,6 +14,7 @@ export class AuthController {
 
 
   @Post('login')
+  @Public()
   @UsePipes(ValidationPipe)
   // @UseGuards(AuthGuard('local'))
   async login(@Body() authDto: CreateAuthDto) {
@@ -25,6 +27,7 @@ export class AuthController {
   }
 
   @Post('register')
+  @Public()
   @UsePipes(ValidationPipe)
   async create(@Body() registerDto: RegisterAuthDto) {
     try {
