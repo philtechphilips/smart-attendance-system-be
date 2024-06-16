@@ -10,6 +10,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/auth.entity';
 import { AuthRepo } from './repository/auth.repository';
 import { Repository } from 'typeorm';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './guards/role.guard';
 
 @Module({
   imports: [
@@ -19,14 +21,24 @@ import { Repository } from 'typeorm';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: configService.get<string>('JWT_DURATION') }
+        signOptions: { expiresIn: configService.get<string>('JWT_DURATION') },
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User])
+    TypeOrmModule.forFeature([User]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepo, LocalStrategy, JwtStrategy, Repository],
+  providers: [
+    AuthService,
+    AuthRepo,
+    LocalStrategy,
+    Repository,
+    JwtStrategy,
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
   exports: [AuthRepo, AuthService, Repository],
 })
 export class AuthModule {}

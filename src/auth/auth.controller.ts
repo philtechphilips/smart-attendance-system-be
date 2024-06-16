@@ -7,6 +7,9 @@ import { JwtAuthGuard } from './guards/jwt.guard';
 import { RegisterAuthDto } from './dto/register-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Public } from './decorators/public.decorators';
+import { Roles } from './decorators/role.decorators';
+import { Role } from 'src/shared/enums/role.enum';
+import { RolesGuard } from './guards/role.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -15,8 +18,8 @@ export class AuthController {
 
   @Post('login')
   @Public()
+  @UseGuards(LocalGuard)
   @UsePipes(ValidationPipe)
-  // @UseGuards(AuthGuard('local'))
   async login(@Body() authDto: CreateAuthDto) {
     try {
       const response = await this.authService.validateUser(authDto);
@@ -43,6 +46,7 @@ export class AuthController {
   }
 
   @Get('status')
+  @Roles(Role.User)
   @UseGuards(JwtAuthGuard)
   status(@Request() req) {
     return req.user;
