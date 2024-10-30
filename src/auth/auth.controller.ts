@@ -11,31 +11,27 @@ import { Roles } from './decorators/role.decorators';
 import { Role } from 'src/shared/enums/role.enum';
 import { RolesGuard } from './guards/role.guard';
 
-@Controller('auth')
+@Controller('/v1/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
 
-  @Post('login')
+  @Post('/login')
   @Public()
   @UseGuards(LocalGuard)
   @UsePipes(ValidationPipe)
   async login(@Body() authDto: CreateAuthDto) {
-    try {
       const response = await this.authService.validateUser(authDto);
-      return { success: true, user: response, message: "User logged in!" }
-    } catch (error) {
-      console.log(error)
-    }
+      return response;
   }
 
-  @Post('register')
+  @Post('/create-account')
   @Public()
   @UsePipes(ValidationPipe)
   async create(@Body() registerDto: RegisterAuthDto) {
     try {
-      const { password, ...user } = await this.authService.create(registerDto);
-      return { success: true, data: user, message: 'Account created successfully!' };
+      const response = await this.authService.create(registerDto);
+      return response;
     } catch (error) {
       if (error.status === 400) {
         throw new HttpException({ success: false, message: error.message }, HttpStatus.BAD_REQUEST);
@@ -45,14 +41,14 @@ export class AuthController {
     }
   }
 
-  @Get('status')
+  @Get('/status')
   @Roles(Role.User)
   @UseGuards(JwtAuthGuard)
   status(@Request() req) {
     return req.user;
   }
 
-  @Get("users")
+  @Get("/users")
   @UseGuards(JwtAuthGuard)
   findAll() {
     return this.authService.findAll();

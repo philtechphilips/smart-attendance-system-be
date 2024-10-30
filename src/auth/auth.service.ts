@@ -41,18 +41,28 @@ export class AuthService {
       const existingUser = await this.authRepo.findOne({
         email: registerDto.email,
       });
-
+  
       if (existingUser) {
-        throw new BadRequestException('Account with this details exist!');
+        throw new BadRequestException('Account with these details already exists!');
       }
+  
       const password = await hashPassword(registerDto.password);
       registerDto.password = password;
-      return await this.authRepo.create(registerDto);
+  
+      const createdUser = await this.authRepo.create(registerDto);
+  
+      // Destructure password out, leaving other properties in `user`
+      const { password: _, ...user } = createdUser;
+  
+      const token = this.jwtService.sign(user);
+  
+      return { ...user, token };
     } catch (error) {
       console.log(error);
       throw error;
     }
   }
+  
 
   async findAll() {
     let users;
