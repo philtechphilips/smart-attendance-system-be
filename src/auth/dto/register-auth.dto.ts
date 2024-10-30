@@ -25,3 +25,22 @@ export class RegisterAuthDto {
     @Type(() => Date)
     updatedAt: Date;
 }
+
+
+export class ForgotPasswordDto {
+    @IsEmail()
+    @IsNotEmpty()
+    email: string;
+}
+
+export class ResetPasswordDto {
+    @IsString()
+    @IsNotEmpty()
+    new_password: string;
+
+    @IsString()
+    @IsNotEmpty()
+    token: string;
+}
+
+

@@ -4,7 +4,7 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { LocalGuard } from './guards/local.guards';
 import { JwtAuthGuard } from './guards/jwt.guard';
-import { RegisterAuthDto } from './dto/register-auth.dto';
+import { ForgotPasswordDto, RegisterAuthDto, ResetPasswordDto } from './dto/register-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Public } from './decorators/public.decorators';
 import { Roles } from './decorators/role.decorators';
@@ -31,6 +31,41 @@ export class AuthController {
   async create(@Body() registerDto: RegisterAuthDto) {
     try {
       const response = await this.authService.create(registerDto);
+      return response;
+    } catch (error) {
+      if (error.status === 400) {
+        throw new HttpException({ success: false, message: error.message }, HttpStatus.BAD_REQUEST);
+      } else {
+        throw new HttpException({ success: false, message: 'Something went wrong!' }, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
+
+  @Post('/forgot-password')
+  @Public()
+  @UsePipes(ValidationPipe)
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    try {
+      const response = await this.authService.forgotPassword(body.email);
+      return response;
+    } catch (error) {
+      if (error.status === 400) {
+        throw new HttpException({ success: false, message: error.message }, HttpStatus.BAD_REQUEST);
+      } else {
+        throw new HttpException({ success: false, message: 'Something went wrong!' }, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
+
+  @Post('/reset-password')
+  @Public()
+  @UsePipes(ValidationPipe)
+  async resetPassword(@Body() data: ResetPasswordDto) {
+    console.log(data)
+    try {
+      const response = await this.authService.resetPassword(data);
       return response;
     } catch (error) {
       if (error.status === 400) {

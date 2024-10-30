@@ -12,6 +12,7 @@ import { AuthRepo } from './repository/auth.repository';
 import { Repository } from 'typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './guards/role.guard';
+import { EmailService } from 'src/shared/email/email.service';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { RolesGuard } from './guards/role.guard';
     LocalStrategy,
     Repository,
     JwtStrategy,
+    EmailService,
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
