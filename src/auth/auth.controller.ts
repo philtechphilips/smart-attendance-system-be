@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UsePipes, ValidationPipe, HttpException, HttpStatus, UseInterceptors, UploadedFile, BadRequestException, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UsePipes, ValidationPipe, HttpException, HttpStatus, UseInterceptors, UploadedFile, BadRequestException, Request, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
@@ -10,6 +10,8 @@ import { Public } from './decorators/public.decorators';
 import { Roles } from './decorators/role.decorators';
 import { Role } from 'src/shared/enums/role.enum';
 import { RolesGuard } from './guards/role.guard';
+import { PaginationDto } from 'src/shared/dto/pagination.dto';
+import { CustomValidationPipe } from 'src/shared/utils/instances';
 
 @Controller('/v1/auth')
 export class AuthController {
@@ -29,16 +31,8 @@ export class AuthController {
   @Public()
   @UsePipes(ValidationPipe)
   async create(@Body() registerDto: RegisterAuthDto) {
-    try {
-      const response = await this.authService.create(registerDto);
-      return response;
-    } catch (error) {
-      if (error.status === 400) {
-        throw new HttpException({ success: false, message: error.message }, HttpStatus.BAD_REQUEST);
-      } else {
-        throw new HttpException({ success: false, message: 'Something went wrong!' }, HttpStatus.INTERNAL_SERVER_ERROR);
-      }
-    }
+    const user = await this.authService.create(registerDto);
+    return user;
   }
 
 
@@ -46,16 +40,8 @@ export class AuthController {
   @Public()
   @UsePipes(ValidationPipe)
   async forgotPassword(@Body() body: ForgotPasswordDto) {
-    try {
       const response = await this.authService.forgotPassword(body.email);
       return response;
-    } catch (error) {
-      if (error.status === 400) {
-        throw new HttpException({ success: false, message: error.message }, HttpStatus.BAD_REQUEST);
-      } else {
-        throw new HttpException({ success: false, message: 'Something went wrong!' }, HttpStatus.INTERNAL_SERVER_ERROR);
-      }
-    }
   }
 
 
@@ -63,29 +49,17 @@ export class AuthController {
   @Public()
   @UsePipes(ValidationPipe)
   async resetPassword(@Body() data: ResetPasswordDto) {
-    console.log(data)
-    try {
       const response = await this.authService.resetPassword(data);
       return response;
-    } catch (error) {
-      if (error.status === 400) {
-        throw new HttpException({ success: false, message: error.message }, HttpStatus.BAD_REQUEST);
-      } else {
-        throw new HttpException({ success: false, message: 'Something went wrong!' }, HttpStatus.INTERNAL_SERVER_ERROR);
-      }
-    }
   }
 
-  @Get('/status')
-  @UseGuards(JwtAuthGuard)
-  status(@Request() req) {
-    return req.user;
-  }
 
   @Get("/users")
   @UseGuards(JwtAuthGuard)
   @Roles(Role.HOD)
-  findAll() {
+  findAll(
+    @Query(CustomValidationPipe) pagination: PaginationDto,
+  ) {
     return this.authService.findAll();
   }
 
