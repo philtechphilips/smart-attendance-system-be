@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UsePipes, ValidationPipe, HttpException, HttpStatus, UseInterceptors, UploadedFile, BadRequestException, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UsePipes, ValidationPipe, HttpException, HttpStatus, UseInterceptors, UploadedFile, BadRequestException, Request, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
@@ -10,6 +10,8 @@ import { Public } from './decorators/public.decorators';
 import { Roles } from './decorators/role.decorators';
 import { Role } from 'src/shared/enums/role.enum';
 import { RolesGuard } from './guards/role.guard';
+import { PaginationDto } from 'src/shared/dto/pagination.dto';
+import { CustomValidationPipe } from 'src/shared/utils/instances';
 
 @Controller('/v1/auth')
 export class AuthController {
@@ -76,16 +78,13 @@ export class AuthController {
     }
   }
 
-  @Get('/status')
-  @UseGuards(JwtAuthGuard)
-  status(@Request() req) {
-    return req.user;
-  }
 
   @Get("/users")
   @UseGuards(JwtAuthGuard)
   @Roles(Role.HOD)
-  findAll() {
+  findAll(
+    @Query(CustomValidationPipe) pagination: PaginationDto,
+  ) {
     return this.authService.findAll();
   }
 
