@@ -15,15 +15,14 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, sawggerConfig);
   SwaggerModule.setup('/v1', app, document);
-  
+
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-    ],
-    methods: ["GET", "POST", "PATCH", "DELETE"],
+    origin: ['http://localhost:3000'],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     credentials: false,
   });
   await app.listen(config.PORT.APP_PORT, () => {
-    logger.log(`Server started on ${config.PORT.APP_PORT}`)});
+    logger.log(`Server started on ${config.PORT.APP_PORT}`);
+  });
 }
 bootstrap();
