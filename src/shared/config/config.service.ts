@@ -6,7 +6,10 @@ dotenv.config();
 const schema = joi
   .object({
     PORT: joi.number().required(),
-    ENVIRONMENT: joi.string().valid('development', 'production', 'staging').required(),
+    ENVIRONMENT: joi
+      .string()
+      .valid('development', 'production', 'staging')
+      .required(),
     DB_HOST: joi.string().required(),
     DB_PORT: joi.string().required(),
     DB_USERNAME: joi.string().required(),
@@ -37,7 +40,7 @@ export const config = {
     HOST: envVars.DB_HOST,
     USER: envVars.DB_USERNAME,
     PASSWORD: envVars.DB_PASSWORD,
-    NAME: envVars.DB_NAME
+    NAME: envVars.DB_NAME,
   },
   EMAIL: {
     USER: envVars.EMAIL_USER,
@@ -45,5 +48,5 @@ export const config = {
     HOST: envVars.EMAIL_HOST,
   },
   FRONTEND_URL: envVars.FRONTEND_URL,
-  JWT_EXPIRES: envVars.JWT_EXPIRATION
+  JWT_EXPIRES: envVars.JWT_EXPIRATION,
 };

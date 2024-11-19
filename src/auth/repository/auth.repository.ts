@@ -16,15 +16,14 @@ export class AuthRepo extends BaseRepository<User> {
   }
 
   async save(data: User) {
-
     delete data.password;
 
     return await this.userRepo.save(data);
   }
-  
+
   async findAll(): Promise<User[]> {
     const users = await this.userRepo.find();
-    users.forEach(user => {
+    users.forEach((user) => {
       delete user.password;
     });
     return users;

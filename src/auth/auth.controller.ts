@@ -1,10 +1,33 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, UsePipes, ValidationPipe, HttpException, HttpStatus, UseInterceptors, UploadedFile, BadRequestException, Request, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Req,
+  UsePipes,
+  ValidationPipe,
+  HttpException,
+  HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  Request,
+  Query,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { LocalGuard } from './guards/local.guards';
 import { JwtAuthGuard } from './guards/jwt.guard';
-import { ForgotPasswordDto, RegisterAuthDto, ResetPasswordDto } from './dto/register-auth.dto';
+import {
+  ForgotPasswordDto,
+  RegisterAuthDto,
+  ResetPasswordDto,
+} from './dto/register-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Public } from './decorators/public.decorators';
 import { Roles } from './decorators/role.decorators';
@@ -15,16 +38,15 @@ import { CustomValidationPipe } from 'src/shared/utils/instances';
 
 @Controller('/v1/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
-
+  constructor(private readonly authService: AuthService) {}
 
   @Post('/login')
   @Public()
   @UseGuards(LocalGuard)
   @UsePipes(ValidationPipe)
   async login(@Body() authDto: CreateAuthDto) {
-      const response = await this.authService.validateUser(authDto);
-      return response;
+    const response = await this.authService.validateUser(authDto);
+    return response;
   }
 
   @Post('/create-account')
@@ -35,31 +57,26 @@ export class AuthController {
     return user;
   }
 
-
   @Post('/forgot-password')
   @Public()
   @UsePipes(ValidationPipe)
   async forgotPassword(@Body() body: ForgotPasswordDto) {
-      const response = await this.authService.forgotPassword(body.email);
-      return response;
+    const response = await this.authService.forgotPassword(body.email);
+    return response;
   }
-
 
   @Post('/reset-password')
   @Public()
   @UsePipes(ValidationPipe)
   async resetPassword(@Body() data: ResetPasswordDto) {
-      const response = await this.authService.resetPassword(data);
-      return response;
+    const response = await this.authService.resetPassword(data);
+    return response;
   }
 
-
-  @Get("/users")
+  @Get('/users')
   @UseGuards(JwtAuthGuard)
   @Roles(Role.HOD)
-  findAll(
-    @Query(CustomValidationPipe) pagination: PaginationDto,
-  ) {
+  findAll(@Query(CustomValidationPipe) pagination: PaginationDto) {
     return this.authService.findAll();
   }
 
