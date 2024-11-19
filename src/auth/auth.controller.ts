@@ -77,7 +77,6 @@ export class AuthController {
   }
 
   @Get('/status')
-  @Roles(Role.User)
   @UseGuards(JwtAuthGuard)
   status(@Request() req) {
     return req.user;
@@ -85,6 +84,7 @@ export class AuthController {
 
   @Get("/users")
   @UseGuards(JwtAuthGuard)
+  @Roles(Role.HOD)
   findAll() {
     return this.authService.findAll();
   }
