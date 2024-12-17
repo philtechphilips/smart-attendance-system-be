@@ -10,7 +10,10 @@ import {
 import { LevelsService } from './levels.service';
 import { CreateLevelDto } from './dto/create-level.dto';
 import { UpdateLevelDto } from './dto/update-level.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Levels')
+@ApiBearerAuth('access-token')
 @Controller('levels')
 export class LevelsController {
   constructor(private readonly levelsService: LevelsService) {}

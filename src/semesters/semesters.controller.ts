@@ -10,7 +10,10 @@ import {
 import { SemestersService } from './semesters.service';
 import { CreateSemesterDto } from './dto/create-semester.dto';
 import { UpdateSemesterDto } from './dto/update-semester.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Semesters')
+@ApiBearerAuth('access-token')
 @Controller('semesters')
 export class SemestersController {
   constructor(private readonly semestersService: SemestersService) {}

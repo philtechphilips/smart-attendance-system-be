@@ -10,7 +10,10 @@ import {
 import { StaffsService } from './staffs.service';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Staffs')
+@ApiBearerAuth('access-token')
 @Controller('staffs')
 export class StaffsController {
   constructor(private readonly staffsService: StaffsService) {}
