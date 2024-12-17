@@ -9,6 +9,8 @@ import { Department } from './entities/department.entity';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { School } from 'src/schools/entities/school.entity';
+import { IPaginationQuery } from 'src/shared/interfaces/date-query';
+import { applyPagination } from 'src/repository/base.repository';
 
 @Injectable()
 export class DepartmentsService {
@@ -50,8 +52,23 @@ export class DepartmentsService {
     return await this.departmentRepository.save(department);
   }
 
-  async findAll() {
-    return await this.departmentRepository.find({ relations: ['school'] });
+  async findAll(pagination: IPaginationQuery) {
+    const queryBuilder =
+      await this.departmentRepository.createQueryBuilder('departments');
+    queryBuilder.leftJoinAndSelect('departments.school', 'school');
+
+    const totalDepartments = await queryBuilder.getCount();
+    const paginatedQuery = await applyPagination(queryBuilder, pagination);
+
+    const departments = await paginatedQuery.getMany();
+
+    return {
+      items: departments,
+      pagination: {
+        total: totalDepartments,
+        currentPage: pagination.currentPage,
+      },
+    };
   }
 
   async findOne(id: string) {

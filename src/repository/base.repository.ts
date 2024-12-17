@@ -1,3 +1,4 @@
+import { IPaginationQuery } from 'src/shared/interfaces/date-query';
 import {
   DeepPartial,
   Repository,
@@ -54,4 +55,18 @@ export abstract class BaseRepository<T> {
   async createQueryBuilder(alias?: string): Promise<SelectQueryBuilder<T>> {
     return this.entity.createQueryBuilder(alias);
   }
+}
+
+export async function applyPagination<T>(
+  queryBuilder: SelectQueryBuilder<T>,
+  pagination: IPaginationQuery,
+): Promise<SelectQueryBuilder<T>> {
+  const { currentPage, pageSize } = pagination;
+
+  const numbersOfItems = pageSize || 10;
+  const current = currentPage || 1;
+
+  const skip = (current - 1) * numbersOfItems;
+
+  return queryBuilder.skip(skip).take(numbersOfItems);
 }
