@@ -1,4 +1,3 @@
-import { IsNotEmpty, IsString } from 'class-validator';
 import {
   Column,
   Entity,
@@ -13,19 +12,22 @@ export class User {
   id: string;
 
   @Column()
-  fullName: string;
-
+  surname: string;
+  
   @Column()
-  password: string;
+  firstname: string;
+  
+  @Column()
+  lastname: string;
 
   @Column()
   email: string;
 
+  @Column()
+  password: string;
+
   @Column({ default: 'user' })
   role: string;
-
-  @Column()
-  isVerified: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -16,6 +16,8 @@ import { SchedulesModule } from './schedules/schedules.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { LevelsModule } from './levels/levels.module';
 import { SchoolsModule } from './schools/schools.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { SemestersModule } from './semesters/semesters.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { SchoolsModule } from './schools/schools.module';
     DepartmentsModule,
     LevelsModule,
     SchoolsModule,
+    SessionsModule,
+    SemestersModule,
   ],
   controllers: [AppController],
   providers: [
