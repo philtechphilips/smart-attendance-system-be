@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
+  ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -47,6 +48,9 @@ export class Student {
   phone: string;
 
   @Column()
+  email: string;
+
+  @Column()
   address: string;
 
   @Column()
@@ -58,17 +62,20 @@ export class Student {
   @Column()
   guardianPhone: string;
 
-  @OneToOne(() => Level)
-  @JoinColumn()
+  // Many Students belong to one Level
+  @ManyToOne(() => Level, (level) => level.students)
+  @JoinColumn({ name: 'level_id' })
   level: Level;
 
-  @OneToOne(() => School)
-  @JoinColumn()
-  school: School;
-
-  @OneToOne(() => Department)
-  @JoinColumn()
+  // Many Students belong to one Department
+  @ManyToOne(() => Department, (department) => department.students)
+  @JoinColumn({ name: 'department_id' })
   department: Department;
+
+  // Many Students belong to one School
+  @ManyToOne(() => School, (school) => school.students)
+  @JoinColumn({ name: 'school_id' })
+  school: School;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

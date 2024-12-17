@@ -20,6 +20,7 @@ import { SessionsModule } from './sessions/sessions.module';
 import { SemestersModule } from './semesters/semesters.module';
 import { SeedModule } from './seeds/seed.module';
 import { SeedService } from './seeds/seed.service';
+import { ProgramsModule } from './programs/programs.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { SeedService } from './seeds/seed.service';
     SessionsModule,
     SemestersModule,
     SeedModule,
+    ProgramsModule,
   ],
   controllers: [AppController],
   providers: [

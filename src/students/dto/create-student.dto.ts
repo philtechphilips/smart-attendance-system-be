@@ -52,6 +52,11 @@ export class CreateStudentDto {
   @IsString()
   phone: string;
 
+  @ApiProperty({ example: 'pelumiisola0@gmail.com' })
+  @IsNotEmpty()
+  @IsString()
+  email: string;
+
   @ApiProperty({ example: '123 Main Street, Victoria Island' })
   @IsNotEmpty()
   @IsString()
