@@ -29,7 +29,7 @@ export class Student {
   matricNo: string;
 
   @Column()
-  dob: string;
+  dob: Date;
 
   @Column()
   country: string;

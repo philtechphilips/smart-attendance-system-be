@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -16,6 +16,10 @@ import { SchedulesModule } from './schedules/schedules.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { LevelsModule } from './levels/levels.module';
 import { SchoolsModule } from './schools/schools.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { SemestersModule } from './semesters/semesters.module';
+import { SeedModule } from './seeds/seed.module';
+import { SeedService } from './seeds/seed.service';
 
 @Module({
   imports: [
@@ -30,6 +34,9 @@ import { SchoolsModule } from './schools/schools.module';
     DepartmentsModule,
     LevelsModule,
     SchoolsModule,
+    SessionsModule,
+    SemestersModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [
@@ -40,4 +47,10 @@ import { SchoolsModule } from './schools/schools.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements OnApplicationBootstrap {
+  constructor(private readonly seedService: SeedService) {}
+
+  async onApplicationBootstrap() {
+    await this.seedService.run();
+  }
+}

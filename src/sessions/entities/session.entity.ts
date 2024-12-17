@@ -1,33 +1,23 @@
+import { Semester } from 'src/semesters/entities/semester.entity';
 import {
   Column,
-  Entity,
-  PrimaryGeneratedColumn,
   CreateDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity({ name: 'users' })
-export class User {
+@Entity({ name: 'sessions' })
+export class Session {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
-  surname: string;
+  name: string;
 
-  @Column()
-  firstname: string;
-
-  @Column()
-  lastname: string;
-
-  @Column()
-  email: string;
-
-  @Column()
-  password: string;
-
-  @Column({ default: 'user' })
-  role: string;
+  @OneToMany(() => Semester, (semester) => semester.session, { cascade: true })
+  semesters: Semester[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
