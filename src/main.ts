@@ -11,11 +11,12 @@ async function bootstrap() {
     .setTitle('Task Manager documentation')
     .setDescription('Contains all API related to the task manager')
     .setVersion('v1.0')
-    .addBearerAuth( {
-      type: 'http',
-      scheme: 'bearer',
-    },
-    'access-token', 
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+      },
+      'access-token',
     )
     .build();
   const document = SwaggerModule.createDocument(app, sawggerConfig);

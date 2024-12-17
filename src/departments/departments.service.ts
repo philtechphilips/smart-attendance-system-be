@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Department } from './entities/department.entity';
@@ -17,7 +21,7 @@ export class DepartmentsService {
 
   async create(createDepartmentDto: CreateDepartmentDto) {
     const { name, schoolId } = createDepartmentDto;
-  
+
     const existingDepartment = await this.departmentRepository.findOne({
       where: {
         name,
@@ -25,24 +29,26 @@ export class DepartmentsService {
       },
       relations: ['school'],
     });
-  
+
     if (existingDepartment) {
       throw new ConflictException('Department already exists in this school');
     }
-  
-    const school = await this.schoolRepository.findOne({ where: { id: schoolId } });
-    
+
+    const school = await this.schoolRepository.findOne({
+      where: { id: schoolId },
+    });
+
     if (!school) {
       throw new NotFoundException('School not found with provided ID');
     }
-  
+
     const department = this.departmentRepository.create({
       name,
       school,
     });
-  
+
     return await this.departmentRepository.save(department);
-  }  
+  }
 
   async findAll() {
     return await this.departmentRepository.find({ relations: ['school'] });
@@ -61,7 +67,6 @@ export class DepartmentsService {
     return department;
   }
 
- 
   async update(id: string, updateDepartmentDto: UpdateDepartmentDto) {
     const department = await this.departmentRepository.findOne({
       where: { id },
@@ -77,7 +82,9 @@ export class DepartmentsService {
   }
 
   async remove(id: string) {
-    const department = await this.departmentRepository.findOne({ where: { id } });
+    const department = await this.departmentRepository.findOne({
+      where: { id },
+    });
 
     if (!department) {
       throw new NotFoundException(`Department with ID ${id} not found`);

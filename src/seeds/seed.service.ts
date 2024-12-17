@@ -41,15 +41,23 @@ export class SeedService {
     const session1 = new Session();
     session1.name = '2023/2024';
     session1.semesters = [
-      await semesterRepository.save(semesterRepository.create({ name: 'First Semester' })),
-      await semesterRepository.save(semesterRepository.create({ name: 'Second Semester' })),
+      await semesterRepository.save(
+        semesterRepository.create({ name: 'First Semester' }),
+      ),
+      await semesterRepository.save(
+        semesterRepository.create({ name: 'Second Semester' }),
+      ),
     ];
 
     const session2 = new Session();
     session2.name = '2024/2025';
     session2.semesters = [
-      await semesterRepository.save(semesterRepository.create({ name: 'First Semester' })),
-      await semesterRepository.save(semesterRepository.create({ name: 'Second Semester' })),
+      await semesterRepository.save(
+        semesterRepository.create({ name: 'First Semester' }),
+      ),
+      await semesterRepository.save(
+        semesterRepository.create({ name: 'Second Semester' }),
+      ),
     ];
 
     await sessionRepository.save([session1, session2]);

@@ -6,9 +6,7 @@ import { DepartmentsController } from './departments.controller';
 import { School } from 'src/schools/entities/school.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Department, School]),
-  ],
+  imports: [TypeOrmModule.forFeature([Department, School])],
   controllers: [DepartmentsController],
   providers: [DepartmentsService],
 })
