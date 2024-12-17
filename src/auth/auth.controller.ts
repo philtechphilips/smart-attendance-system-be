@@ -35,7 +35,10 @@ import { Role } from 'src/shared/enums/role.enum';
 import { RolesGuard } from './guards/role.guard';
 import { PaginationDto } from 'src/shared/dto/pagination.dto';
 import { CustomValidationPipe } from 'src/shared/utils/instances';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Auth')
+@ApiBearerAuth('access-token')
 @Controller('/v1/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
