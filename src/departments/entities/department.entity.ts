@@ -10,5 +10,5 @@ export class Department {
   name: string;
 
   @ManyToOne(() => School, (school) => school.id)
-    school: School
+  school: School;
 }

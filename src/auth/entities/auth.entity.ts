@@ -13,10 +13,10 @@ export class User {
 
   @Column()
   surname: string;
-  
+
   @Column()
   firstname: string;
-  
+
   @Column()
   lastname: string;
 

@@ -1,52 +1,51 @@
 import { Department } from 'src/departments/entities/department.entity';
 import {
-    Column,
-    Entity,
-    PrimaryGeneratedColumn,
-    CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
-  } from 'typeorm';
-  
-  @Entity({ name: 'staffs' })
-  export class Staff {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
-  
-    @Column()
-    surname: string;
-    
-    @Column()
-    firstname: string;
-    
-    @Column()
-    lastname: string;
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+} from 'typeorm';
 
-    @Column()
-    email: string;
+@Entity({ name: 'staffs' })
+export class Staff {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column()
-    phone: string;
+  @Column()
+  surname: string;
 
-    @Column()
-    address: string;
+  @Column()
+  firstname: string;
 
-    @Column()
-    position: string;
+  @Column()
+  lastname: string;
 
-    @Column()
-    level: string;
+  @Column()
+  email: string;
 
-    @Column()
-    dob: Date;
+  @Column()
+  phone: string;
 
-    @ManyToOne(() => Department, (department) => department.id)
-    department: Department
-  
-    @CreateDateColumn({ name: 'created_at' })
-    createdAt: Date;
-  
-    @UpdateDateColumn({ name: 'updated_at' })
-    updatedAt: Date;
-  }
-  
+  @Column()
+  address: string;
+
+  @Column()
+  position: string;
+
+  @Column()
+  level: string;
+
+  @Column()
+  dob: Date;
+
+  @ManyToOne(() => Department, (department) => department.id)
+  department: Department;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}
