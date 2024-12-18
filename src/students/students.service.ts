@@ -199,9 +199,9 @@ export class StudentsService {
         .leftJoinAndSelect('students.school', 'school')
         .leftJoinAndSelect('students.program', 'program')
         .getOne();
-        if(!student){
-          throw new NotFoundException("Student not found!");
-        }
+      if (!student) {
+        throw new NotFoundException('Student not found!');
+      }
       return student;
     } catch (error) {
       if (error instanceof NotFoundException) {
