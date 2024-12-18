@@ -1,3 +1,4 @@
+import { User } from 'src/auth/entities/auth.entity';
 import { Department } from 'src/departments/entities/department.entity';
 import {
   Column,
@@ -6,6 +7,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
 
 @Entity({ name: 'staffs' })
@@ -14,7 +17,7 @@ export class Staff {
   id: string;
 
   @Column()
-  surname: string;
+  middlename: string;
 
   @Column()
   firstname: string;
@@ -39,6 +42,10 @@ export class Staff {
 
   @Column()
   dob: Date;
+
+  @OneToOne(() => User, { cascade: true })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @ManyToOne(() => Department, (department) => department.id)
   department: Department;
