@@ -17,14 +17,8 @@ export class CreateStudentDto {
   @IsString()
   middlename: string;
 
-  @ApiProperty({ example: 'MAT123456' })
-  @IsNotEmpty()
-  @IsString()
-  matricNo: string;
-
   @ApiProperty({ example: '2000-05-15' })
   @IsNotEmpty()
-  @IsDate()
   dob: Date;
 
   @ApiProperty({ example: 'Nigeria' })
@@ -41,11 +35,6 @@ export class CreateStudentDto {
   @IsNotEmpty()
   @IsString()
   lga: string;
-
-  @ApiProperty({ example: '300-Level' })
-  @IsNotEmpty()
-  @IsString()
-  class: string;
 
   @ApiProperty({ example: '+2349012345678' })
   @IsNotEmpty()
@@ -91,4 +80,9 @@ export class CreateStudentDto {
   @IsNotEmpty()
   @IsString()
   departmentId: string;
+
+  @ApiProperty({ example: 'dept-56789' })
+  @IsNotEmpty()
+  @IsString()
+  programId: string;
 }

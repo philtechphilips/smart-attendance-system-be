@@ -1,5 +1,7 @@
+import { User } from 'src/auth/entities/auth.entity';
 import { Department } from 'src/departments/entities/department.entity';
 import { Level } from 'src/levels/entities/level.entity';
+import { Program } from 'src/programs/entities/program.entity';
 import { School } from 'src/schools/entities/school.entity';
 import {
   Column,
@@ -26,7 +28,7 @@ export class Student {
   @Column()
   middlename: string;
 
-  @Column()
+  @Column({ default: null })
   matricNo: string;
 
   @Column()
@@ -40,9 +42,6 @@ export class Student {
 
   @Column()
   lga: string;
-
-  @Column()
-  class: string;
 
   @Column()
   phone: string;
@@ -72,10 +71,19 @@ export class Student {
   @JoinColumn({ name: 'department_id' })
   department: Department;
 
+  // Many Students belong to one Department
+  @ManyToOne(() => Program, (program) => program.students)
+  @JoinColumn({ name: 'program_id' })
+  program: Program;
+
   // Many Students belong to one School
   @ManyToOne(() => School, (school) => school.students)
   @JoinColumn({ name: 'school_id' })
   school: School;
+
+  @OneToOne(() => User, { cascade: true })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

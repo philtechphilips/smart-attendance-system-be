@@ -18,6 +18,9 @@ export class Department {
   @Column()
   name: string;
 
+  @Column()
+  code: string;
+
   @ManyToOne(() => School, (school) => school.id)
   school: School;
 
