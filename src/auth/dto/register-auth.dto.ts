@@ -1,5 +1,6 @@
 import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
+import { Optional } from '@nestjs/common';
 
 export class RegisterAuthDto {
   @IsString()
@@ -20,6 +21,10 @@ export class RegisterAuthDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
+
+  @IsEmail()
+  @Optional()
+  role?: string;
 
   @Transform(({ value }) => value || false)
   isVerified?: boolean = false;
