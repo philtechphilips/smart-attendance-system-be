@@ -1,11 +1,14 @@
+import { User } from 'src/auth/entities/auth.entity';
 import { Department } from 'src/departments/entities/department.entity';
 import { Level } from 'src/levels/entities/level.entity';
+import { Program } from 'src/programs/entities/program.entity';
 import { School } from 'src/schools/entities/school.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
+  ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -25,7 +28,7 @@ export class Student {
   @Column()
   middlename: string;
 
-  @Column()
+  @Column({ default: null })
   matricNo: string;
 
   @Column()
@@ -41,10 +44,10 @@ export class Student {
   lga: string;
 
   @Column()
-  class: string;
+  phone: string;
 
   @Column()
-  phone: string;
+  email: string;
 
   @Column()
   address: string;
@@ -58,17 +61,29 @@ export class Student {
   @Column()
   guardianPhone: string;
 
-  @OneToOne(() => Level)
-  @JoinColumn()
+  // Many Students belong to one Level
+  @ManyToOne(() => Level, (level) => level.students)
+  @JoinColumn({ name: 'level_id' })
   level: Level;
 
-  @OneToOne(() => School)
-  @JoinColumn()
+  // Many Students belong to one Department
+  @ManyToOne(() => Department, (department) => department.students)
+  @JoinColumn({ name: 'department_id' })
+  department: Department;
+
+  // Many Students belong to one Department
+  @ManyToOne(() => Program, (program) => program.students)
+  @JoinColumn({ name: 'program_id' })
+  program: Program;
+
+  // Many Students belong to one School
+  @ManyToOne(() => School, (school) => school.students)
+  @JoinColumn({ name: 'school_id' })
   school: School;
 
-  @OneToOne(() => Department)
-  @JoinColumn()
-  department: Department;
+  @OneToOne(() => User, { cascade: true })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

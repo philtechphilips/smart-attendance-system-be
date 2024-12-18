@@ -1,31 +1,22 @@
-import { School } from 'src/schools/entities/school.entity';
 import { Student } from 'src/students/entities/student.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
-  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity({ name: 'departments' })
-export class Department {
+@Entity({ name: 'programs' })
+export class Program {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
   name: string;
 
-  @Column()
-  code: string;
-
-  @ManyToOne(() => School, (school) => school.id)
-  school: School;
-
-  // One Department contains many Students
-  @OneToMany(() => Student, (student) => student.department)
+  @OneToMany(() => Student, (student) => student.program)
   students: Student[];
 
   @CreateDateColumn({ name: 'created_at' })

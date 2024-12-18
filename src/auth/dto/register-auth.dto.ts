@@ -10,20 +10,25 @@ export class RegisterAuthDto {
   @IsString()
   @IsNotEmpty()
   @Length(1, 255)
-  fullName: string;
+  lastname: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 255)
+  firstname: string;
 
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
   @Transform(({ value }) => value || false)
-  isVerified: boolean = false;
+  isVerified?: boolean = false;
 
   @Type(() => Date)
-  createdAt: Date;
+  createdAt?: Date;
 
   @Type(() => Date)
-  updatedAt: Date;
+  updatedAt?: Date;
 }
 
 export class ForgotPasswordDto {

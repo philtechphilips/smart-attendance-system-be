@@ -1,26 +1,113 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Department } from './entities/department.entity';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
+import { School } from 'src/schools/entities/school.entity';
+import { IPaginationQuery } from 'src/shared/interfaces/date-query';
+import { applyPagination } from 'src/repository/base.repository';
 
 @Injectable()
 export class DepartmentsService {
-  create(createDepartmentDto: CreateDepartmentDto) {
-    return 'This action adds a new department';
+  constructor(
+    @InjectRepository(Department)
+    private readonly departmentRepository: Repository<Department>,
+    @InjectRepository(School)
+    private readonly schoolRepository: Repository<School>,
+  ) {}
+
+  async create(createDepartmentDto: CreateDepartmentDto) {
+    const { name, schoolId } = createDepartmentDto;
+
+    const existingDepartment = await this.departmentRepository.findOne({
+      where: {
+        name,
+        school: { id: schoolId },
+      },
+      relations: ['school'],
+    });
+
+    if (existingDepartment) {
+      throw new ConflictException('Department already exists in this school');
+    }
+
+    const school = await this.schoolRepository.findOne({
+      where: { id: schoolId },
+    });
+
+    if (!school) {
+      throw new NotFoundException('School not found with provided ID');
+    }
+
+    const department = this.departmentRepository.create({
+      name,
+      school,
+    });
+
+    return await this.departmentRepository.save(department);
   }
 
-  findAll() {
-    return `This action returns all departments`;
+  async findAll(pagination: IPaginationQuery) {
+    const queryBuilder =
+      await this.departmentRepository.createQueryBuilder('departments');
+    queryBuilder.leftJoinAndSelect('departments.school', 'school');
+
+    const totalDepartments = await queryBuilder.getCount();
+    const paginatedQuery = await applyPagination(queryBuilder, pagination);
+
+    const departments = await paginatedQuery.getMany();
+
+    return {
+      items: departments,
+      pagination: {
+        total: totalDepartments,
+        currentPage: pagination.currentPage,
+      },
+    };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} department`;
+  async findOne(id: string) {
+    const department = await this.departmentRepository.findOne({
+      where: { id },
+      relations: ['school'],
+    });
+
+    if (!department) {
+      throw new NotFoundException(`Department with ID ${id} not found`);
+    }
+
+    return department;
   }
 
-  update(id: number, updateDepartmentDto: UpdateDepartmentDto) {
-    return `This action updates a #${id} department`;
+  async update(id: string, updateDepartmentDto: UpdateDepartmentDto) {
+    const department = await this.departmentRepository.findOne({
+      where: { id },
+      relations: ['school'],
+    });
+
+    if (!department) {
+      throw new NotFoundException(`Department with ID ${id} not found`);
+    }
+
+    Object.assign(department, updateDepartmentDto);
+    return await this.departmentRepository.save(department);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} department`;
+  async remove(id: string) {
+    const department = await this.departmentRepository.findOne({
+      where: { id },
+    });
+
+    if (!department) {
+      throw new NotFoundException(`Department with ID ${id} not found`);
+    }
+
+    await this.departmentRepository.delete(id);
+    return { message: `Department with ID ${id} has been deleted` };
   }
 }
