@@ -11,10 +11,12 @@ import { UpdateStudentDto } from './dto/update-student.dto';
 import { Student } from './entities/student.entity';
 import { School } from 'src/schools/entities/school.entity';
 import { Program } from 'src/programs/entities/program.entity';
-import { Department } from 'src/departments/entities/department.entity';
 import { Level } from 'src/levels/entities/level.entity';
 import { User } from 'src/auth/entities/auth.entity';
 import { AuthService } from 'src/auth/auth.service';
+import { applyPagination } from 'src/repository/base.repository';
+import { IPaginationQuery } from 'src/shared/interfaces/date-query';
+import { Department } from 'src/departments/entities/department.entity';
 
 @Injectable()
 export class StudentsService {
@@ -145,22 +147,68 @@ export class StudentsService {
       });
     } catch (error) {
       console.error('Failed to create student', error.stack);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      if (error instanceof ConflictException) {
+        throw error;
+      }
       throw new InternalServerErrorException('Failed to create student');
     }
   }
 
-  findAll() {
-    return this.studentRepository.find(); // Return all students from the database
+  async findAll(pagination: IPaginationQuery) {
+    try {
+      const queryBuilder =
+        await this.studentRepository.createQueryBuilder('students');
+      queryBuilder
+        .select(['students.id', 'user.id'])
+        .leftJoin('students.user', 'user')
+        .leftJoinAndSelect('students.level', 'level')
+        .leftJoinAndSelect('students.department', 'department')
+        .leftJoinAndSelect('students.school', 'school')
+        .leftJoinAndSelect('students.program', 'program');
+
+      const totalstudents = await queryBuilder.getCount();
+      const paginatedQuery = await applyPagination(queryBuilder, pagination);
+
+      const students = await paginatedQuery.getMany();
+
+      return {
+        items: students,
+        pagination: {
+          total: totalstudents,
+          currentPage: pagination.currentPage,
+        },
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to fetch students');
+    }
   }
 
   async findOne(id: string) {
-    const student = await this.studentRepository.findOne({
-      where: { id },
-      relations: ['level', 'department', 'program', 'school'],
-    });
-    if (!student)
-      throw new NotFoundException(`Student with ID ${id} not found`);
-    return student;
+    try {
+      const queryBuilder =
+        await this.studentRepository.createQueryBuilder('students');
+      const student = queryBuilder
+        .where('students.id = :id', { id })
+        .select(['students.id', 'user.id'])
+        .leftJoin('students.user', 'user')
+        .leftJoinAndSelect('students.level', 'level')
+        .leftJoinAndSelect('students.department', 'department')
+        .leftJoinAndSelect('students.school', 'school')
+        .leftJoinAndSelect('students.program', 'program')
+        .getOne();
+        if(!student){
+          throw new NotFoundException("Student not found!");
+        }
+      return student;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to fetch student');
+    }
   }
 
   async update(id: string, updateStudentDto: UpdateStudentDto) {

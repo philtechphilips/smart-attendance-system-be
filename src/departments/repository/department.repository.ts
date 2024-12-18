@@ -5,7 +5,7 @@ import { EntityManager, Repository } from 'typeorm';
 import { Department } from '../entities/department.entity';
 
 @Injectable()
-export class AuthRepo extends BaseRepository<Department> {
+export class DepartmentRepo extends BaseRepository<Department> {
   constructor(
     @InjectRepository(Department)
     private departmentModel: Repository<Department>,
