@@ -20,7 +20,7 @@ import { PaginationDto } from 'src/shared/dto/pagination.dto';
 
 @ApiTags('Students')
 @ApiBearerAuth('access-token')
-@Controller('students')
+@Controller('/v1/students')
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 

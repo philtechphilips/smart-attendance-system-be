@@ -17,7 +17,7 @@ import { CustomValidationPipe } from 'src/shared/utils/instances';
 
 @ApiTags('Departments')
 @ApiBearerAuth('access-token')
-@Controller('departments')
+@Controller('/v1/departments')
 export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}
 

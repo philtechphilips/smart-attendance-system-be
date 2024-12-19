@@ -59,6 +59,9 @@ export class Student {
   guardianAddress: string;
 
   @Column()
+  guardianEmail: string;
+
+  @Column()
   guardianPhone: string;
 
   // Many Students belong to one Level

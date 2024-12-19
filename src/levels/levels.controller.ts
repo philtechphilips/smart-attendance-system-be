@@ -11,10 +11,11 @@ import { LevelsService } from './levels.service';
 import { CreateLevelDto } from './dto/create-level.dto';
 import { UpdateLevelDto } from './dto/update-level.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Public } from 'src/auth/decorators/public.decorators';
 
 @ApiTags('Levels')
 @ApiBearerAuth('access-token')
-@Controller('levels')
+@Controller('/v1/levels')
 export class LevelsController {
   constructor(private readonly levelsService: LevelsService) {}
 
@@ -24,6 +25,7 @@ export class LevelsController {
   }
 
   @Get()
+  @Public()
   findAll() {
     return this.levelsService.findAll();
   }

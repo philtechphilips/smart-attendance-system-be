@@ -66,6 +66,11 @@ export class CreateStudentDto {
   @IsString()
   guardianPhone: string;
 
+  @ApiProperty({ example: 'pelumiisola87@gmail.com' })
+  @IsNotEmpty()
+  @IsString()
+  guardianEmail: string;
+
   @ApiProperty({ example: '1e23d456-789f-12ab-34cd-56ef7890' })
   @IsNotEmpty()
   @IsString()
