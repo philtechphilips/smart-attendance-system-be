@@ -14,6 +14,7 @@ import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PaginationDto } from 'src/shared/dto/pagination.dto';
 import { CustomValidationPipe } from 'src/shared/utils/instances';
+import { Public } from 'src/auth/decorators/public.decorators';
 
 @ApiTags('Departments')
 @ApiBearerAuth('access-token')
@@ -29,6 +30,12 @@ export class DepartmentsController {
   @Get()
   findAll(@Query(CustomValidationPipe) pagination: PaginationDto) {
     return this.departmentsService.findAll(pagination);
+  }
+
+  @Get('/list')
+  @Public()
+  getDepartmentListAll() {
+    return this.departmentsService.getList();
   }
 
   @Get(':id')

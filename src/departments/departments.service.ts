@@ -71,6 +71,14 @@ export class DepartmentsService {
     };
   }
 
+  async getList() {
+    const queryBuilder =
+      await this.departmentRepository.createQueryBuilder('departments');
+    queryBuilder.leftJoinAndSelect('departments.school', 'school');
+
+    return await queryBuilder.getMany();
+  }
+
   async findOne(id: string) {
     const department = await this.departmentRepository.findOne({
       where: { id },
