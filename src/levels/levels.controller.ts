@@ -19,29 +19,9 @@ import { Public } from 'src/auth/decorators/public.decorators';
 export class LevelsController {
   constructor(private readonly levelsService: LevelsService) {}
 
-  @Post()
-  create(@Body() createLevelDto: CreateLevelDto) {
-    return this.levelsService.create(createLevelDto);
-  }
-
   @Get()
   @Public()
   findAll() {
     return this.levelsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.levelsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateLevelDto: UpdateLevelDto) {
-    return this.levelsService.update(+id, updateLevelDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.levelsService.remove(+id);
   }
 }
