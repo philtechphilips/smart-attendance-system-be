@@ -14,10 +14,21 @@ import { AuthRepo } from '../auth/repository/auth.repository';
 import { LocalStrategy } from '../auth/strategies/local.strategies';
 import { JwtStrategy } from '../auth/strategies/jwt.strategy';
 import { User } from 'src/auth/entities/auth.entity';
+import { Level } from 'src/levels/entities/level.entity';
+import { Department } from 'src/departments/entities/department.entity';
+import { School } from 'src/schools/entities/school.entity';
+import { Program } from 'src/programs/entities/program.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Student, User]),
+    TypeOrmModule.forFeature([
+      Student,
+      User,
+      Level,
+      Department,
+      School,
+      Program,
+    ]),
     ConfigModule.forRoot(),
     JwtModule.registerAsync({
       imports: [ConfigModule],
