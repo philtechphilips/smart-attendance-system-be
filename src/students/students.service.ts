@@ -23,6 +23,14 @@ export class StudentsService {
   constructor(
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    @InjectRepository(Level)
+    private readonly levelRepository: Repository<Level>,
+    @InjectRepository(Department)
+    private readonly departmentRepository: Repository<Department>,
+    @InjectRepository(Program)
+    private readonly programRepository: Repository<Program>,
+    @InjectRepository(School)
+    private readonly schoolRepository: Repository<School>,
     private readonly authService: AuthService,
     private readonly dataSource: DataSource,
   ) {}
@@ -50,111 +58,105 @@ export class StudentsService {
     } = createStudentDto;
 
     try {
-      return await this.dataSource.transaction(async (manager) => {
-        // Check if a student with the same email already exists
-        const existingStudent = await manager.findOne(Student, {
-          where: { email },
-        });
-        if (existingStudent) {
-          throw new ConflictException(
-            `A student with email ${email} already exists`,
-          );
-        }
-
-        const user = await this.authService.create({
-          lastname,
-          firstname,
-          email,
-          password: lastname.toLowerCase(),
-        });
-
-        if (user) {
-          const level = await manager.findOne(Level, {
-            where: { id: levelId },
-          });
-          if (!level)
-            throw new NotFoundException(`Level with ID ${levelId} not found`);
-
-          const department = await manager.findOne(Department, {
-            where: { id: departmentId },
-          });
-          if (!department)
-            throw new NotFoundException(
-              `Department with ID ${departmentId} not found`,
-            );
-
-          const program = await manager.findOne(Program, {
-            where: { id: programId },
-          });
-          if (!program)
-            throw new NotFoundException(
-              `Program with ID ${programId} not found`,
-            );
-
-          const school = await manager.findOne(School, {
-            where: { id: schoolId },
-          });
-          if (!school)
-            throw new NotFoundException(`School with ID ${schoolId} not found`);
-
-          // **Generate the Department Code**
-          const deptCode = department.code.padStart(3, '0'); // Ensure 3-digit department codes
-
-          const programCode = program.name.charAt(0);
-
-          let levelCode = level.name.slice(0, 2);
-          levelCode = levelCode === 'HN' ? 'HD' : 'ND';
-
-          // **Generate the Year of Registration**
-          const yearOfRegistration = new Date()
-            .getFullYear()
-            .toString()
-            .slice(-2);
-
-          // **Generate a Sequential Number**
-          const studentCount = await manager.count(Student);
-          const sequentialNumber = (studentCount + 1)
-            .toString()
-            .padStart(2, '0');
-
-          // **Generate the Matriculation Number**
-          const matricNo = `${programCode}/${levelCode}/${yearOfRegistration}/${deptCode}/00${sequentialNumber}`;
-
-          // **Create the Student Entity**
-          const student = this.studentRepository.create({
-            lastname,
-            firstname,
-            middlename,
-            dob,
-            country,
-            state,
-            lga,
-            phone,
-            email,
-            address,
-            guardian,
-            guardianAddress,
-            guardianPhone,
-            guardianEmail,
-            level,
-            department,
-            program,
-            school,
-            user,
-            matricNo,
-          });
-
-          return await manager.save(student);
-        }
+      // Check if the student already exists by email
+      const existingStudent = await this.studentRepository.findOne({
+        where: { email },
       });
+      if (existingStudent) {
+        throw new ConflictException(
+          `A student with email ${email} already exists`,
+        );
+      }
+
+      // Create the user
+      const user = await this.authService.create({
+        lastname,
+        firstname,
+        email,
+        password: lastname.toLowerCase(), // Default password
+      });
+
+      if (!user) {
+        throw new InternalServerErrorException('Failed to create user');
+      }
+
+      // Validate related entities
+      const level = await this.levelRepository.findOne({
+        where: { id: levelId },
+      });
+      if (!level) {
+        throw new NotFoundException(`Level with ID ${levelId} not found`);
+      }
+
+      const department = await this.departmentRepository.findOne({
+        where: { id: departmentId },
+      });
+      if (!department) {
+        throw new NotFoundException(
+          `Department with ID ${departmentId} not found`,
+        );
+      }
+
+      const program = await this.programRepository.findOne({
+        where: { id: programId },
+      });
+      if (!program) {
+        throw new NotFoundException(`Program with ID ${programId} not found`);
+      }
+
+      const school = await this.schoolRepository.findOne({
+        where: { id: schoolId },
+      });
+      if (!school) {
+        throw new NotFoundException(`School with ID ${schoolId} not found`);
+      }
+
+      // Generate Matriculation Number
+      const deptCode = department.code.padStart(3, '0'); // 3-digit department code
+      const programCode = program.name.charAt(0); // First letter of program
+      const levelCode = level.name.startsWith('HN') ? 'HD' : 'ND'; // Code for level
+      const yearOfRegistration = new Date().getFullYear().toString().slice(-2); // Last 2 digits of the year
+
+      const studentCount = await this.studentRepository.count();
+      const sequentialNumber = (studentCount + 1).toString().padStart(2, '0'); // 2-digit sequence
+
+      const matricNo = `${programCode}/${levelCode}/${yearOfRegistration}/${deptCode}/00${sequentialNumber}`;
+
+      // Create the student entity
+      const student = this.studentRepository.create({
+        lastname,
+        firstname,
+        middlename,
+        dob,
+        country,
+        state,
+        lga,
+        phone,
+        email,
+        address,
+        guardian,
+        guardianAddress,
+        guardianPhone,
+        guardianEmail,
+        level,
+        department,
+        program,
+        school,
+        user,
+        matricNo,
+      });
+
+      return await this.studentRepository.save(student);
     } catch (error) {
-      console.error('Failed to create student', error.stack);
-      if (error instanceof NotFoundException) {
+      console.error('Error creating student:', error.message);
+
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
-      if (error instanceof ConflictException) {
-        throw error;
-      }
+
       throw new InternalServerErrorException('Failed to create student');
     }
   }
