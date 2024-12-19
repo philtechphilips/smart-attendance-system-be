@@ -14,7 +14,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Programs')
 @ApiBearerAuth('access-token')
-@Controller('programs')
+@Controller('/v1/programs')
 export class ProgramsController {
   constructor(private readonly programsService: ProgramsService) {}
 

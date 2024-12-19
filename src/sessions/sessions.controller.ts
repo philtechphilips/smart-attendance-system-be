@@ -14,7 +14,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Sessions')
 @ApiBearerAuth('access-token')
-@Controller('sessions')
+@Controller('/v1/sessions')
 export class SessionsController {
   constructor(private readonly sessionsService: SessionsService) {}
 
