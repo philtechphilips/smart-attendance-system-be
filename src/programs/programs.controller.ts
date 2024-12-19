@@ -11,6 +11,7 @@ import { ProgramsService } from './programs.service';
 import { CreateProgramDto } from './dto/create-program.dto';
 import { UpdateProgramDto } from './dto/update-program.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Public } from 'src/auth/decorators/public.decorators';
 
 @ApiTags('Programs')
 @ApiBearerAuth('access-token')
@@ -18,28 +19,9 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 export class ProgramsController {
   constructor(private readonly programsService: ProgramsService) {}
 
-  @Post()
-  create(@Body() createProgramDto: CreateProgramDto) {
-    return this.programsService.create(createProgramDto);
-  }
-
   @Get()
+  @Public()
   findAll() {
     return this.programsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.programsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProgramDto: UpdateProgramDto) {
-    return this.programsService.update(+id, updateProgramDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.programsService.remove(+id);
   }
 }
