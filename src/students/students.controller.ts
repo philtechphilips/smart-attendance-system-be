@@ -9,6 +9,7 @@ import {
   UsePipes,
   ValidationPipe,
   Query,
+  Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { StudentsService } from './students.service';
@@ -17,6 +18,8 @@ import { UpdateStudentDto } from './dto/update-student.dto';
 import { Public } from 'src/auth/decorators/public.decorators';
 import { CustomValidationPipe } from 'src/shared/utils/instances';
 import { PaginationDto } from 'src/shared/dto/pagination.dto';
+import { Role } from 'src/shared/enums/role.enum';
+import { Roles } from 'src/auth/decorators/role.decorators';
 
 @ApiTags('Students')
 @ApiBearerAuth('access-token')
@@ -34,6 +37,16 @@ export class StudentsController {
   @Get()
   findAll(@Query(CustomValidationPipe) pagination: PaginationDto) {
     return this.studentsService.findAll(pagination);
+  }
+
+  @Get('/departmental-students')
+  @Roles(Role.HOD)
+  getAllDepartmentStudent(
+    @Query(CustomValidationPipe) pagination: PaginationDto,
+    @Req() req,
+  ) {
+    const user = req.user;
+    return this.studentsService.getDepartmentStudent(pagination, user);
   }
 
   @Get(':id')
