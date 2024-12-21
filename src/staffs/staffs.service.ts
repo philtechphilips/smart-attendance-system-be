@@ -13,6 +13,7 @@ import { Department } from 'src/departments/entities/department.entity';
 import { AuthService } from 'src/auth/auth.service';
 import { IPaginationQuery } from 'src/shared/interfaces/date-query';
 import { applyPagination } from 'src/repository/base.repository';
+import { User } from 'src/auth/entities/auth.entity';
 
 @Injectable()
 export class StaffsService {
@@ -102,6 +103,48 @@ export class StaffsService {
       };
     } catch (error) {
       throw new InternalServerErrorException('Failed to fetch staffs');
+    }
+  }
+
+  async getDepartmentStaff(pagination: IPaginationQuery, user: User) {
+    try {
+      const getUserDept = await this.staffRepository.findOne({
+        where: { user: { id: user.id } },
+        relations: ['user', 'department'],
+      });
+
+      if (!getUserDept) {
+        throw new NotFoundException('Error finding your department!');
+      }
+
+      const queryBuilder =
+        await this.staffRepository.createQueryBuilder('staff');
+      queryBuilder
+        .select(['staff.id', 'user.id'])
+        .leftJoin('staff.user', 'user')
+        .leftJoinAndSelect('staff.department', 'department')
+        .where('department.id = :departmentId', {
+          departmentId: getUserDept.department.id,
+        });
+
+      const totalstaff = await queryBuilder.getCount();
+      const paginatedQuery = await applyPagination(queryBuilder, pagination);
+
+      const staff = await paginatedQuery.getMany();
+
+      return {
+        items: staff,
+        pagination: {
+          total: totalstaff,
+          currentPage: pagination.currentPage,
+        },
+      };
+    } catch (error) {
+      console.log(error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to fetch staff');
     }
   }
 

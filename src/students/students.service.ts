@@ -17,6 +17,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { applyPagination } from 'src/repository/base.repository';
 import { IPaginationQuery } from 'src/shared/interfaces/date-query';
 import { Department } from 'src/departments/entities/department.entity';
+import { Staff } from 'src/staffs/entities/staff.entity';
 
 @Injectable()
 export class StudentsService {
@@ -31,8 +32,9 @@ export class StudentsService {
     private readonly programRepository: Repository<Program>,
     @InjectRepository(School)
     private readonly schoolRepository: Repository<School>,
+    @InjectRepository(Staff)
+    private readonly staffRepository: Repository<Staff>,
     private readonly authService: AuthService,
-    private readonly dataSource: DataSource,
   ) {}
 
   async create(createStudentDto: CreateStudentDto): Promise<Student> {
@@ -186,6 +188,51 @@ export class StudentsService {
         },
       };
     } catch (error) {
+      throw new InternalServerErrorException('Failed to fetch students');
+    }
+  }
+
+  async getDepartmentStudent(pagination: IPaginationQuery, user: User) {
+    try {
+      const getUserDept = await this.staffRepository.findOne({
+        where: { user: { id: user.id } },
+        relations: ['user', 'department'],
+      });
+
+      if (!getUserDept) {
+        throw new NotFoundException('Error finding your department!');
+      }
+
+      const queryBuilder =
+        await this.studentRepository.createQueryBuilder('students');
+      queryBuilder
+        .select(['students.id', 'user.id'])
+        .leftJoin('students.user', 'user')
+        .leftJoinAndSelect('students.level', 'level')
+        .leftJoinAndSelect('students.department', 'department')
+        .where('department.id = :departmentId', {
+          departmentId: getUserDept.department.id,
+        })
+        .leftJoinAndSelect('students.school', 'school')
+        .leftJoinAndSelect('students.program', 'program');
+
+      const totalstudents = await queryBuilder.getCount();
+      const paginatedQuery = await applyPagination(queryBuilder, pagination);
+
+      const students = await paginatedQuery.getMany();
+
+      return {
+        items: students,
+        pagination: {
+          total: totalstudents,
+          currentPage: pagination.currentPage,
+        },
+      };
+    } catch (error) {
+      console.log(error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       throw new InternalServerErrorException('Failed to fetch students');
     }
   }
