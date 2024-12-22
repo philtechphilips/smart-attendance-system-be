@@ -206,7 +206,6 @@ export class StudentsService {
       const queryBuilder =
         await this.studentRepository.createQueryBuilder('students');
       queryBuilder
-        .select(['students.id', 'user.id'])
         .leftJoin('students.user', 'user')
         .leftJoinAndSelect('students.level', 'level')
         .leftJoinAndSelect('students.department', 'department')

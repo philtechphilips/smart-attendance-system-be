@@ -120,7 +120,6 @@ export class StaffsService {
       const queryBuilder =
         await this.staffRepository.createQueryBuilder('staff');
       queryBuilder
-        .select(['staff.id', 'user.id'])
         .leftJoin('staff.user', 'user')
         .leftJoinAndSelect('staff.department', 'department')
         .where('department.id = :departmentId', {
