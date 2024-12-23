@@ -6,11 +6,17 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
+  Req,
 } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Roles } from 'src/auth/decorators/role.decorators';
+import { CustomValidationPipe } from 'src/shared/utils/instances';
+import { PaginationDto } from 'src/shared/dto/pagination.dto';
+import { Role } from 'src/shared/enums/role.enum';
 
 @ApiTags('Courses')
 @ApiBearerAuth('access-token')
@@ -24,8 +30,18 @@ export class CoursesController {
   }
 
   @Get()
-  findAll() {
-    return this.coursesService.findAll();
+  findAll(@Query(CustomValidationPipe) pagination: PaginationDto) {
+    return this.coursesService.findAll(pagination);
+  }
+
+  @Get('/departmental-courses')
+  @Roles(Role.HOD)
+  getAllDepartmentCourses(
+    @Query(CustomValidationPipe) pagination: PaginationDto,
+    @Req() req,
+  ) {
+    const user = req.user;
+    return this.coursesService.getDepartmentCourses(pagination, user);
   }
 
   @Get(':id')
