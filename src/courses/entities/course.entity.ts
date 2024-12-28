@@ -1,5 +1,6 @@
 import { Department } from 'src/departments/entities/department.entity';
 import { Level } from 'src/levels/entities/level.entity';
+import { Program } from 'src/programs/entities/program.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import {
   Column,
@@ -8,8 +9,6 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  ManyToMany,
-  JoinTable,
 } from 'typeorm';
 
 @Entity({ name: 'courses' })
@@ -29,9 +28,11 @@ export class Course {
   @ManyToOne(() => Level, (level) => level.id)
   class: Level;
 
-  @ManyToMany(() => Department)
-  @JoinTable()
-  categories: Department[];
+  @ManyToOne(() => Department, (department) => department.id)
+  department: Department;
+
+  @ManyToOne(() => Program, (program) => program.id)
+  program: Program;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

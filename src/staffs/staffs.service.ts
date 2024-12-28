@@ -90,9 +90,13 @@ export class StaffsService {
         .leftJoinAndSelect('staffs.department', 'department');
 
       const totalStaffs = await queryBuilder.getCount();
-      const paginatedQuery = await applyPagination(queryBuilder, pagination);
+      let staffs;
+      if (pagination) {
+        const paginatedQuery = await applyPagination(queryBuilder, pagination);
+        staffs = await paginatedQuery.getMany();
+      }
 
-      const staffs = await paginatedQuery.getMany();
+      staffs = queryBuilder.getMany();
 
       return {
         items: staffs,

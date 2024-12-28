@@ -6,14 +6,14 @@ export class PaginationDto {
   @ApiProperty({ description: 'Page number for pagination', example: 1 })
   @Type(() => Number)
   @IsInt()
-  @IsNotEmpty()
+  @IsOptional()
   @Min(1)
-  currentPage: number;
+  currentPage?: number;
 
   @ApiProperty({ description: 'Page number for pagination', example: 10 })
   @Type(() => Number)
   @IsInt()
-  @IsNotEmpty()
+  @IsOptional()
   @Min(1)
-  pageSize: number;
+  pageSize?: number;
 }
