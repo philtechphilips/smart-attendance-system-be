@@ -20,29 +20,6 @@ export class AttendancesController {
 
   @Post()
   create(@Body() createAttendanceDto: CreateAttendanceDto) {
-    return this.attendancesService.create(createAttendanceDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.attendancesService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.attendancesService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateAttendanceDto: UpdateAttendanceDto,
-  ) {
-    return this.attendancesService.update(+id, updateAttendanceDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.attendancesService.remove(+id);
+    return this.attendancesService.createAttendance(createAttendanceDto);
   }
 }
