@@ -6,8 +6,8 @@ export interface IDateQuery {
   pastEndDate?: Date;
 }
 export interface IPaginationQuery {
-  currentPage: number;
-  pageSize: number;
+  currentPage?: number;
+  pageSize?: number;
 }
 
 export interface IPagination<T> {
