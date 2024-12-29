@@ -132,7 +132,9 @@ export class AttendancesService {
       .createQueryBuilder('attendance')
       .leftJoinAndSelect('attendance.student', 'student')
       .leftJoinAndSelect('student.department', 'department')
+      .leftJoinAndSelect('student.level', 'level')
       .leftJoinAndSelect('attendance.course', 'course')
+      .leftJoinAndSelect('course.lecturer', 'lecturer')
       .where('department.id = :departmentId', {
         departmentId: getUserDept.department.id,
       });
@@ -144,9 +146,9 @@ export class AttendancesService {
     const attendance = await paginatedQuery.getMany();
 
     return {
-      items: totalAttendance,
+      items: attendance,
       pagination: {
-        total: attendance,
+        total: totalAttendance,
         currentPage: pagination.currentPage,
       },
     };
