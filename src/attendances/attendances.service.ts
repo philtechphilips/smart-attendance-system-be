@@ -5,6 +5,10 @@ import { Attendance } from './entities/attendance.entity';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { Student } from 'src/students/entities/student.entity';
 import { Course } from 'src/courses/entities/course.entity';
+import { User } from 'src/auth/entities/auth.entity';
+import { IPaginationQuery } from 'src/shared/interfaces/date-query';
+import { Staff } from 'src/staffs/entities/staff.entity';
+import { applyPagination } from 'src/repository/base.repository';
 
 @Injectable()
 export class AttendancesService {
@@ -15,6 +19,8 @@ export class AttendancesService {
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(Course)
     private readonly courseRepository: Repository<Course>,
+    @InjectRepository(Staff)
+    private readonly staffRepository: Repository<Staff>,
   ) {}
 
   /**
@@ -112,20 +118,37 @@ export class AttendancesService {
     return this.attendanceRepository.save(attendance);
   }
 
-  async getAttendanceByDepartment(departmentId: string): Promise<Attendance[]> {
+  async getAttendanceByDepartment(pagination: IPaginationQuery, user: User) {
+    const getUserDept = await this.staffRepository.findOne({
+      where: { user: { id: user.id } },
+      relations: ['user', 'department'],
+    });
+
+    if (!getUserDept) {
+      throw new NotFoundException('Error finding your department!');
+    }
+
     const attendanceRecords = await this.attendanceRepository
       .createQueryBuilder('attendance')
       .leftJoinAndSelect('attendance.student', 'student')
+      .leftJoinAndSelect('student.department', 'department')
       .leftJoinAndSelect('attendance.course', 'course')
-      .where('student.departmentId = :departmentId', { departmentId })
-      .getMany();
+      .where('department.id = :departmentId', {
+        departmentId: getUserDept.department.id,
+      });
 
-    if (!attendanceRecords.length) {
-      throw new NotFoundException(
-        `No attendance records found for department ID ${departmentId}`,
-      );
-    }
+    const totalAttendance = await attendanceRecords.getCount();
 
-    return attendanceRecords;
+    const paginatedQuery = await applyPagination(attendanceRecords, pagination);
+
+    const attendance = await paginatedQuery.getMany();
+
+    return {
+      items: totalAttendance,
+      pagination: {
+        total: attendance,
+        currentPage: pagination.currentPage,
+      },
+    };
   }
 }
