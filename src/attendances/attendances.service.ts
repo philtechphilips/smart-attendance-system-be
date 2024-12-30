@@ -9,6 +9,7 @@ import { User } from 'src/auth/entities/auth.entity';
 import { IPaginationQuery } from 'src/shared/interfaces/date-query';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { applyPagination } from 'src/repository/base.repository';
+import { AttendanceQueryDto } from 'src/shared/dto/attendance.dto';
 
 @Injectable()
 export class AttendancesService {
@@ -118,7 +119,11 @@ export class AttendancesService {
     return this.attendanceRepository.save(attendance);
   }
 
-  async getAttendanceByDepartment(pagination: IPaginationQuery, user: User) {
+  async getAttendanceByDepartment(
+    pagination: IPaginationQuery,
+    user: User,
+    query: AttendanceQueryDto,
+  ) {
     const getUserDept = await this.staffRepository.findOne({
       where: { user: { id: user.id } },
       relations: ['user', 'department'],
@@ -132,10 +137,18 @@ export class AttendancesService {
       .createQueryBuilder('attendance')
       .leftJoinAndSelect('attendance.student', 'student')
       .leftJoinAndSelect('student.department', 'department')
+      .leftJoinAndSelect('student.level', 'level')
       .leftJoinAndSelect('attendance.course', 'course')
+      .leftJoinAndSelect('course.lecturer', 'lecturer')
       .where('department.id = :departmentId', {
         departmentId: getUserDept.department.id,
       });
+
+    if (query && query.status !== 'all') {
+      attendanceRecords.andWhere('attendance.status = :status', {
+        status: query?.status?.toLowerCase(),
+      });
+    }
 
     const totalAttendance = await attendanceRecords.getCount();
 
@@ -144,9 +157,9 @@ export class AttendancesService {
     const attendance = await paginatedQuery.getMany();
 
     return {
-      items: totalAttendance,
+      items: attendance,
       pagination: {
-        total: attendance,
+        total: totalAttendance,
         currentPage: pagination.currentPage,
       },
     };

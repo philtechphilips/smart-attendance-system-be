@@ -19,6 +19,7 @@ import { Roles } from 'src/auth/decorators/role.decorators';
 import { Role } from 'src/shared/enums/role.enum';
 import { CustomValidationPipe } from 'src/shared/utils/instances';
 import { PaginationDto } from 'src/shared/dto/pagination.dto';
+import { AttendanceQueryDto } from 'src/shared/dto/attendance.dto';
 
 @ApiTags('Attendance')
 @ApiBearerAuth('access-token')
@@ -35,10 +36,15 @@ export class AttendancesController {
   @Get('/departmental-attendance')
   @Roles(Role.HOD)
   getAllDepartmentStudent(
-    @Query(CustomValidationPipe) pagination: PaginationDto,
     @Req() req,
+    @Query(CustomValidationPipe) pagination: PaginationDto,
+    @Query(CustomValidationPipe) status?: AttendanceQueryDto,
   ) {
     const user = req.user;
-    return this.attendancesService.getAttendanceByDepartment(pagination, user);
+    return this.attendancesService.getAttendanceByDepartment(
+      pagination,
+      user,
+      status,
+    );
   }
 }
