@@ -6,10 +6,11 @@ import { Student } from 'src/students/entities/student.entity';
 import { Attendance } from './entities/attendance.entity';
 import { Course } from 'src/courses/entities/course.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
+import { AttendanceGateway } from 'src/shared/socket/attendance.socket';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Attendance, Student, Course, Staff])],
   controllers: [AttendancesController],
-  providers: [AttendancesService],
+  providers: [AttendancesService, AttendanceGateway],
 })
 export class AttendancesModule {}

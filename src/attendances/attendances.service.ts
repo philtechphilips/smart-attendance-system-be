@@ -10,6 +10,7 @@ import { IPaginationQuery } from 'src/shared/interfaces/date-query';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { applyPagination } from 'src/repository/base.repository';
 import { AttendanceQueryDto } from 'src/shared/dto/attendance.dto';
+import { AttendanceGateway } from 'src/shared/socket/attendance.socket';
 
 @Injectable()
 export class AttendancesService {
@@ -22,6 +23,7 @@ export class AttendancesService {
     private readonly courseRepository: Repository<Course>,
     @InjectRepository(Staff)
     private readonly staffRepository: Repository<Staff>,
+    private readonly attendanceGateway: AttendanceGateway,
   ) {}
 
   /**
@@ -55,6 +57,8 @@ export class AttendancesService {
       course,
       status: status || 'absent', // Default status
     });
+
+    // this.attendanceGateway.sendAttendanceUpdate(attendanceData);
 
     return this.attendanceRepository.save(attendance);
   }
@@ -122,7 +126,7 @@ export class AttendancesService {
   async getAttendanceByDepartment(
     pagination: IPaginationQuery,
     user: User,
-    query: AttendanceQueryDto,
+    query?: AttendanceQueryDto,
   ) {
     const getUserDept = await this.staffRepository.findOne({
       where: { user: { id: user.id } },
