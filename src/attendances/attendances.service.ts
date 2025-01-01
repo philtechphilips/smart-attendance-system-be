@@ -154,6 +154,12 @@ export class AttendancesService {
       });
     }
 
+    if (query && query.level !== 'all') {
+      attendanceRecords.andWhere('level.name = :level', {
+        level: query?.level?.toLowerCase(),
+      });
+    }
+
     const totalAttendance = await attendanceRecords.getCount();
 
     const paginatedQuery = await applyPagination(attendanceRecords, pagination);

@@ -38,13 +38,13 @@ export class AttendancesController {
   getAllDepartmentStudent(
     @Req() req,
     @Query(CustomValidationPipe) pagination: PaginationDto,
-    @Query(CustomValidationPipe) status?: AttendanceQueryDto,
+    @Query(CustomValidationPipe) query?: AttendanceQueryDto,
   ) {
     const user = req.user;
     return this.attendancesService.getAttendanceByDepartment(
       pagination,
       user,
-      status,
+      query,
     );
   }
 }
