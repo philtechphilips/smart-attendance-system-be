@@ -1,8 +1,9 @@
 import { IsInt, IsNotEmpty, IsOptional, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { DateRangeDto } from './date-range.dto';
 
-export class AttendanceQueryDto {
+export class AttendanceQueryDto extends DateRangeDto {
   @ApiProperty({ description: 'filter by status', example: 'present' })
   @Type(() => String)
   @IsOptional()

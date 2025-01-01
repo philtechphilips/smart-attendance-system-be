@@ -6,7 +6,7 @@ import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { Student } from 'src/students/entities/student.entity';
 import { Course } from 'src/courses/entities/course.entity';
 import { User } from 'src/auth/entities/auth.entity';
-import { IPaginationQuery } from 'src/shared/interfaces/date-query';
+import { IDateQuery, IPaginationQuery } from 'src/shared/interfaces/date-query';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { applyPagination } from 'src/repository/base.repository';
 import { AttendanceQueryDto } from 'src/shared/dto/attendance.dto';
@@ -127,6 +127,7 @@ export class AttendancesService {
     pagination: IPaginationQuery,
     user: User,
     query?: AttendanceQueryDto,
+    period?: IDateQuery,
   ) {
     const getUserDept = await this.staffRepository.findOne({
       where: { user: { id: user.id } },
@@ -152,6 +153,24 @@ export class AttendancesService {
       attendanceRecords.andWhere('attendance.status = :status', {
         status: query?.status?.toLowerCase(),
       });
+    }
+
+    if (period.selectedDate) {
+      attendanceRecords.andWhere(
+        'CONVERT(date,attendance.timestamp) = CONVERT(date,:selectedDate)',
+        {
+          selectedDate: period.selectedDate,
+        },
+      );
+      console.log('hey here');
+    } else if (period.startDate && period.endDate) {
+      attendanceRecords
+        .andWhere('attendance.timestamp >= :startDate', {
+          startDate: period.startDate,
+        })
+        .andWhere('attendance.timestamp <= :endDate', {
+          endDate: period.endDate,
+        });
     }
 
     if (query && query.level !== 'all') {
