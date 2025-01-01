@@ -21,6 +21,7 @@ import { SemestersModule } from './semesters/semesters.module';
 import { SeedModule } from './seeds/seed.module';
 import { SeedService } from './seeds/seed.service';
 import { ProgramsModule } from './programs/programs.module';
+import * as admin from 'firebase-admin';
 
 @Module({
   imports: [
@@ -50,7 +51,15 @@ import { ProgramsModule } from './programs/programs.module';
   ],
 })
 export class AppModule implements OnApplicationBootstrap {
-  constructor(private readonly seedService: SeedService) {}
+  constructor(private readonly seedService: SeedService) {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      }),
+    });
+  }
 
   async onApplicationBootstrap() {
     await this.seedService.run();
