@@ -20,6 +20,7 @@ import { Role } from 'src/shared/enums/role.enum';
 import { CustomValidationPipe } from 'src/shared/utils/instances';
 import { PaginationDto } from 'src/shared/dto/pagination.dto';
 import { AttendanceQueryDto } from 'src/shared/dto/attendance.dto';
+import { DateFilter } from 'src/utils/date-filter';
 
 @ApiTags('Attendance')
 @ApiBearerAuth('access-token')
@@ -38,13 +39,16 @@ export class AttendancesController {
   getAllDepartmentStudent(
     @Req() req,
     @Query(CustomValidationPipe) pagination: PaginationDto,
-    @Query(CustomValidationPipe) status?: AttendanceQueryDto,
+    @Query(CustomValidationPipe) query?: AttendanceQueryDto,
   ) {
     const user = req.user;
+    const ranges = DateFilter(query);
+
     return this.attendancesService.getAttendanceByDepartment(
       pagination,
       user,
-      status,
+      query,
+      ranges,
     );
   }
 }
