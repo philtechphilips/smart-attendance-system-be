@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Attendance } from './entities/attendance.entity';
@@ -149,7 +149,7 @@ export class AttendancesService {
         departmentId: getUserDept.department.id,
       });
 
-    if (query && query.status !== 'all') {
+    if (query && query.status && query.status !== 'all') {
       attendanceRecords.andWhere('attendance.status = :status', {
         status: query?.status?.toLowerCase(),
       });
@@ -162,7 +162,6 @@ export class AttendancesService {
           selectedDate: period.selectedDate,
         },
       );
-      console.log('hey here');
     } else if (period.startDate && period.endDate) {
       attendanceRecords
         .andWhere('attendance.timestamp >= :startDate', {
@@ -173,7 +172,7 @@ export class AttendancesService {
         });
     }
 
-    if (query && query.level !== 'all') {
+    if (query && query.level && query.level !== 'all') {
       attendanceRecords.andWhere('level.name = :level', {
         level: query?.level?.toLowerCase(),
       });
@@ -192,5 +191,29 @@ export class AttendancesService {
         currentPage: pagination.currentPage,
       },
     };
+  }
+
+  async getAttendanceById(id: string) {
+    try {
+      const attendance = await this.attendanceRepository
+        .createQueryBuilder('attendance')
+        .leftJoinAndSelect('attendance.student', 'student')
+        .leftJoinAndSelect('student.department', 'department')
+        .leftJoinAndSelect('student.level', 'level')
+        .leftJoinAndSelect('attendance.course', 'course')
+        .leftJoinAndSelect('course.lecturer', 'lecturer')
+        .where('attendance.id = :id', { id });
+
+      const attendanceRecord = await attendance.getOne();
+      if (!attendanceRecord) {
+        throw new NotFoundException('Attendance Not Found!');
+      }
+      return attendanceRecord;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new HttpException(error, 500);
+    }
   }
 }
