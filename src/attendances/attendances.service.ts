@@ -1,6 +1,6 @@
 import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { Student } from 'src/students/entities/student.entity';
@@ -11,6 +11,7 @@ import { Staff } from 'src/staffs/entities/staff.entity';
 import { applyPagination } from 'src/repository/base.repository';
 import { AttendanceQueryDto } from 'src/shared/dto/attendance.dto';
 import { AttendanceGateway } from 'src/shared/socket/attendance.socket';
+import { Level } from 'src/levels/entities/level.entity';
 
 @Injectable()
 export class AttendancesService {
@@ -21,6 +22,8 @@ export class AttendancesService {
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(Course)
     private readonly courseRepository: Repository<Course>,
+    @InjectRepository(Level)
+    private readonly levelRepository: Repository<Level>,
     @InjectRepository(Staff)
     private readonly staffRepository: Repository<Staff>,
     private readonly attendanceGateway: AttendanceGateway,
@@ -215,5 +218,84 @@ export class AttendancesService {
       }
       throw new HttpException(error, 500);
     }
+  }
+
+  async autoMarkAbsentForLevelAndCourse(
+    levelId: string,
+    courseId: string,
+    date: Date,
+  ): Promise<void> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Fetch the course with its related class
+    const course = await this.courseRepository.findOne({
+      where: { id: courseId },
+      relations: ['class'],
+    });
+
+    if (!course) {
+      console.log(`Course with ID ${courseId} not found.`);
+      return;
+    }
+
+    // Check if the course's class matches the specified level
+    if (course.class.id !== levelId) {
+      console.log(
+        `Course class ID ${course.class.id} does not match level ID ${levelId}.`,
+      );
+      return;
+    }
+
+    // Fetch all students in the specified level and attendance for the course on that day
+    const [students, attendances] = await Promise.all([
+      this.studentRepository.find({
+        where: { level: { id: levelId } },
+        relations: ['level'],
+      }),
+      this.attendanceRepository.find({
+        where: {
+          course: { id: courseId },
+          timestamp: Between(startOfDay, endOfDay),
+        },
+        relations: ['student'], // Load related student entities
+      }),
+    ]);
+
+    if (!students.length) {
+      console.log(`No students found for level ID ${levelId}`);
+      return;
+    }
+
+    // Map attendance records to a set for faster lookup
+    const markedStudentIds = new Set(attendances.map((att) => att.student.id));
+
+    // Identify students without attendance for the course
+    const absentStudents = students.filter(
+      (student) => !markedStudentIds.has(student.id),
+    );
+
+    if (!absentStudents.length) {
+      console.log(
+        `No absent students for course ${courseId} and level ${levelId} on ${date}`,
+      );
+      return;
+    }
+
+    // Create and save absent records in bulk
+    const absentRecords = absentStudents.map((student) => ({
+      student,
+      course,
+      status: 'absent' as const, // Correctly typed status
+    }));
+
+    await this.attendanceRepository.save(absentRecords);
+
+    console.log(
+      `${absentRecords.length} students marked as absent for course ${courseId} and level ${levelId} on ${date}`,
+    );
   }
 }

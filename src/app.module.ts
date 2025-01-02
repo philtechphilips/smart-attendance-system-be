@@ -22,6 +22,7 @@ import { SeedModule } from './seeds/seed.module';
 import { SeedService } from './seeds/seed.service';
 import { ProgramsModule } from './programs/programs.module';
 import * as admin from 'firebase-admin';
+import { SchedulingModule } from './shared/schedule/schedule.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import * as admin from 'firebase-admin';
     SessionsModule,
     SemestersModule,
     SeedModule,
+    SchedulingModule,
     ProgramsModule,
   ],
   controllers: [AppController],
