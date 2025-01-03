@@ -12,32 +12,27 @@ export class SchedulingService {
     private readonly courseRepository: CourseRepo,
   ) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_10_SECONDS)
   async autoMarkAbsentForLevelAndCourse() {
     const today = new Date();
 
     try {
-      // Retrieve all levels and courses at once
-      const [levels, courses] = await Promise.all([
-        this.levelRepository.findAll(),
-        this.courseRepository.findAll(),
-      ]);
+      // Retrieve all levels and courses
+      const courses = await this.courseRepository.findAll();
 
-      const tasks = levels.flatMap((level) =>
+      // Mark absent for all courses concurrently
+      await Promise.all(
         courses.map((course) =>
           this.attendanceService
-            .autoMarkAbsentForLevelAndCourse(level.id, course.id, today)
+            .autoMarkAbsentForLevelAndCourse(course.id, today)
             .catch((error) => {
               console.error(
-                `Error marking absents for level ${level.id} and course ${course.id}:`,
+                `Error marking absents for course ${course.id}:`,
                 error.message,
               );
             }),
         ),
       );
-
-      // Process all tasks concurrently
-      await Promise.all(tasks);
 
       console.log('Attendance marking completed for all levels and courses.');
     } catch (error) {

@@ -246,7 +246,6 @@ export class AttendancesService {
   }
 
   async autoMarkAbsentForLevelAndCourse(
-    levelId: string,
     courseId: string,
     date: Date,
   ): Promise<void> {
@@ -267,18 +266,10 @@ export class AttendancesService {
       return;
     }
 
-    // Check if the course's class matches the specified level
-    if (course.class.id !== levelId) {
-      console.log(
-        `Course class ID ${course.class.id} does not match level ID ${levelId}.`,
-      );
-      return;
-    }
-
     // Fetch all students in the specified level and attendance for the course on that day
     const [students, attendances] = await Promise.all([
       this.studentRepository.find({
-        where: { level: { id: levelId } },
+        where: { level: { id: course.class.id } },
         relations: ['level'],
       }),
       this.attendanceRepository.find({
@@ -291,7 +282,7 @@ export class AttendancesService {
     ]);
 
     if (!students.length) {
-      console.log(`No students found for level ID ${levelId}`);
+      console.log(`No students found`);
       return;
     }
 
@@ -304,23 +295,30 @@ export class AttendancesService {
     );
 
     if (!absentStudents.length) {
-      console.log(
-        `No absent students for course ${courseId} and level ${levelId} on ${date}`,
-      );
+      console.log(`No absent students for course ${courseId} on ${date}`);
       return;
+    }
+
+    const semester = await this.semesterRepository.findOne({
+      where: { active: true },
+    });
+
+    if (!semester) {
+      throw new NotFoundException(`No active Semester`);
     }
 
     // Create and save absent records in bulk
     const absentRecords = absentStudents.map((student) => ({
       student,
       course,
+      semester,
       status: 'absent' as const, // Correctly typed status
     }));
 
     await this.attendanceRepository.save(absentRecords);
 
     console.log(
-      `${absentRecords.length} students marked as absent for course ${courseId} and level ${levelId} on ${date}`,
+      `${absentRecords.length} students marked as absent for course ${courseId} on ${date}`,
     );
   }
 }
