@@ -282,16 +282,22 @@ export class AttendancesService {
     ]);
 
     if (!students.length) {
-      console.log(`No students found`);
+      console.log(`No students found for level ${course.class.id}`);
       return;
     }
 
-    // Map attendance records to a set for faster lookup
-    const markedStudentIds = new Set(attendances.map((att) => att.student.id));
+    // Check if any classmates attended the session
+    const presentStudentIds = new Set(attendances.map((att) => att.student.id));
+    if (presentStudentIds.size === 0) {
+      console.log(
+        `No classmates attended the course ${courseId} on ${date}. Absent marking skipped.`,
+      );
+      return;
+    }
 
     // Identify students without attendance for the course
     const absentStudents = students.filter(
-      (student) => !markedStudentIds.has(student.id),
+      (student) => !presentStudentIds.has(student.id),
     );
 
     if (!absentStudents.length) {
