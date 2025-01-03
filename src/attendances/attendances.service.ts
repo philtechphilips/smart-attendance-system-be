@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { Attendance } from './entities/attendance.entity';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { Student } from 'src/students/entities/student.entity';
@@ -11,6 +16,8 @@ import { Staff } from 'src/staffs/entities/staff.entity';
 import { applyPagination } from 'src/repository/base.repository';
 import { AttendanceQueryDto } from 'src/shared/dto/attendance.dto';
 import { AttendanceGateway } from 'src/shared/socket/attendance.socket';
+import { Level } from 'src/levels/entities/level.entity';
+import { Semester } from 'src/semesters/entities/semester.entity';
 
 @Injectable()
 export class AttendancesService {
@@ -21,8 +28,12 @@ export class AttendancesService {
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(Course)
     private readonly courseRepository: Repository<Course>,
+    @InjectRepository(Level)
+    private readonly levelRepository: Repository<Level>,
     @InjectRepository(Staff)
     private readonly staffRepository: Repository<Staff>,
+    @InjectRepository(Semester)
+    private readonly semesterRepository: Repository<Semester>,
     private readonly attendanceGateway: AttendanceGateway,
   ) {}
 
@@ -38,27 +49,44 @@ export class AttendancesService {
     // Validate Student
     const student = await this.studentRepository.findOne({
       where: { id: studentId },
+      relations: ['level'],
     });
+
     if (!student) {
       throw new NotFoundException(`Student with ID ${studentId} not found`);
+    }
+
+    const semester = await this.semesterRepository.findOne({
+      where: { active: true },
+    });
+
+    if (!semester) {
+      throw new NotFoundException(`No active Semester`);
     }
 
     // Validate Course
     const course = await this.courseRepository.findOne({
       where: { id: courseId },
+      relations: ['class'],
     });
+
     if (!course) {
       throw new NotFoundException(`Course with ID ${courseId} not found`);
+    }
+
+    if (course.class.id !== student.level.id) {
+      throw new BadRequestException(
+        `Student level and course level does not match!`,
+      );
     }
 
     // Create and save attendance
     const attendance = this.attendanceRepository.create({
       student,
       course,
-      status: status || 'absent', // Default status
+      semester,
+      status: status || 'absent',
     });
-
-    // this.attendanceGateway.sendAttendanceUpdate(attendanceData);
 
     return this.attendanceRepository.save(attendance);
   }
@@ -149,7 +177,7 @@ export class AttendancesService {
         departmentId: getUserDept.department.id,
       });
 
-    if (query && query.status !== 'all') {
+    if (query && query.status && query.status !== 'all') {
       attendanceRecords.andWhere('attendance.status = :status', {
         status: query?.status?.toLowerCase(),
       });
@@ -162,7 +190,6 @@ export class AttendancesService {
           selectedDate: period.selectedDate,
         },
       );
-      console.log('hey here');
     } else if (period.startDate && period.endDate) {
       attendanceRecords
         .andWhere('attendance.timestamp >= :startDate', {
@@ -173,7 +200,7 @@ export class AttendancesService {
         });
     }
 
-    if (query && query.level !== 'all') {
+    if (query && query.level && query.level !== 'all') {
       attendanceRecords.andWhere('level.name = :level', {
         level: query?.level?.toLowerCase(),
       });
@@ -192,5 +219,106 @@ export class AttendancesService {
         currentPage: pagination.currentPage,
       },
     };
+  }
+
+  async getAttendanceById(id: string) {
+    try {
+      const attendance = await this.attendanceRepository
+        .createQueryBuilder('attendance')
+        .leftJoinAndSelect('attendance.student', 'student')
+        .leftJoinAndSelect('student.department', 'department')
+        .leftJoinAndSelect('student.level', 'level')
+        .leftJoinAndSelect('attendance.course', 'course')
+        .leftJoinAndSelect('course.lecturer', 'lecturer')
+        .where('attendance.id = :id', { id });
+
+      const attendanceRecord = await attendance.getOne();
+      if (!attendanceRecord) {
+        throw new NotFoundException('Attendance Not Found!');
+      }
+      return attendanceRecord;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new HttpException(error, 500);
+    }
+  }
+
+  async autoMarkAbsentForLevelAndCourse(
+    courseId: string,
+    date: Date,
+  ): Promise<void> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Fetch the course with its related class
+    const course = await this.courseRepository.findOne({
+      where: { id: courseId },
+      relations: ['class'],
+    });
+
+    if (!course) {
+      console.log(`Course with ID ${courseId} not found.`);
+      return;
+    }
+
+    // Fetch all students in the specified level and attendance for the course on that day
+    const [students, attendances] = await Promise.all([
+      this.studentRepository.find({
+        where: { level: { id: course.class.id } },
+        relations: ['level'],
+      }),
+      this.attendanceRepository.find({
+        where: {
+          course: { id: courseId },
+          timestamp: Between(startOfDay, endOfDay),
+        },
+        relations: ['student'], // Load related student entities
+      }),
+    ]);
+
+    if (!students.length) {
+      console.log(`No students found`);
+      return;
+    }
+
+    // Map attendance records to a set for faster lookup
+    const markedStudentIds = new Set(attendances.map((att) => att.student.id));
+
+    // Identify students without attendance for the course
+    const absentStudents = students.filter(
+      (student) => !markedStudentIds.has(student.id),
+    );
+
+    if (!absentStudents.length) {
+      console.log(`No absent students for course ${courseId} on ${date}`);
+      return;
+    }
+
+    const semester = await this.semesterRepository.findOne({
+      where: { active: true },
+    });
+
+    if (!semester) {
+      throw new NotFoundException(`No active Semester`);
+    }
+
+    // Create and save absent records in bulk
+    const absentRecords = absentStudents.map((student) => ({
+      student,
+      course,
+      semester,
+      status: 'absent' as const, // Correctly typed status
+    }));
+
+    await this.attendanceRepository.save(absentRecords);
+
+    console.log(
+      `${absentRecords.length} students marked as absent for course ${courseId} on ${date}`,
+    );
   }
 }

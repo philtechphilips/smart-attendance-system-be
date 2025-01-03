@@ -19,6 +19,9 @@ export class Session {
   @OneToMany(() => Semester, (semester) => semester.session, { cascade: true })
   semesters: Semester[];
 
+  @Column({ default: false })
+  active: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

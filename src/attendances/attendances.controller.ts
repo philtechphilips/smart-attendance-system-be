@@ -51,4 +51,10 @@ export class AttendancesController {
       ranges,
     );
   }
+
+  @Get('/:id')
+  @Roles(Role.HOD)
+  getAttendanceById(@Param('id') id: string) {
+    return this.attendancesService.getAttendanceById(id);
+  }
 }

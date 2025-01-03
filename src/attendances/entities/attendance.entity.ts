@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Student } from 'src/students/entities/student.entity';
 import { Course } from 'src/courses/entities/course.entity';
+import { Semester } from 'src/semesters/entities/semester.entity';
 
 @Entity('attendance')
 export class Attendance {
@@ -27,6 +28,10 @@ export class Attendance {
   @ManyToOne(() => Student, (student) => student.id, { nullable: false })
   @JoinColumn({ name: 'student_id' })
   student: Student;
+
+  @ManyToOne(() => Semester, (semester) => semester.id, { nullable: true })
+  @JoinColumn({ name: 'semester_id' })
+  semester: Semester;
 
   @ManyToOne(() => Course, (course) => course.id, { nullable: false })
   @JoinColumn({ name: 'course_id' })

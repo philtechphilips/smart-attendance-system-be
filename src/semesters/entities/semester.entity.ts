@@ -16,6 +16,9 @@ export class Semester {
   @Column()
   name: string;
 
+  @Column({ default: false })
+  active: boolean;
+
   @ManyToOne(() => Session, (session) => session.semesters, {
     onDelete: 'CASCADE',
   })
