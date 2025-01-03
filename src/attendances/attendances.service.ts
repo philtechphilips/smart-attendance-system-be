@@ -1,4 +1,9 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { Attendance } from './entities/attendance.entity';
@@ -12,6 +17,7 @@ import { applyPagination } from 'src/repository/base.repository';
 import { AttendanceQueryDto } from 'src/shared/dto/attendance.dto';
 import { AttendanceGateway } from 'src/shared/socket/attendance.socket';
 import { Level } from 'src/levels/entities/level.entity';
+import { Semester } from 'src/semesters/entities/semester.entity';
 
 @Injectable()
 export class AttendancesService {
@@ -26,6 +32,8 @@ export class AttendancesService {
     private readonly levelRepository: Repository<Level>,
     @InjectRepository(Staff)
     private readonly staffRepository: Repository<Staff>,
+    @InjectRepository(Semester)
+    private readonly semesterRepository: Repository<Semester>,
     private readonly attendanceGateway: AttendanceGateway,
   ) {}
 
@@ -41,27 +49,44 @@ export class AttendancesService {
     // Validate Student
     const student = await this.studentRepository.findOne({
       where: { id: studentId },
+      relations: ['level'],
     });
+
     if (!student) {
       throw new NotFoundException(`Student with ID ${studentId} not found`);
+    }
+
+    const semester = await this.semesterRepository.findOne({
+      where: { active: true },
+    });
+
+    if (!semester) {
+      throw new NotFoundException(`No active Semester`);
     }
 
     // Validate Course
     const course = await this.courseRepository.findOne({
       where: { id: courseId },
+      relations: ['class'],
     });
+
     if (!course) {
       throw new NotFoundException(`Course with ID ${courseId} not found`);
+    }
+
+    if (course.class.id !== student.level.id) {
+      throw new BadRequestException(
+        `Student level and course level does not match!`,
+      );
     }
 
     // Create and save attendance
     const attendance = this.attendanceRepository.create({
       student,
       course,
-      status: status || 'absent', // Default status
+      semester,
+      status: status || 'absent',
     });
-
-    // this.attendanceGateway.sendAttendanceUpdate(attendanceData);
 
     return this.attendanceRepository.save(attendance);
   }

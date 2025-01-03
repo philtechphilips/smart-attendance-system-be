@@ -13,11 +13,19 @@ import { Student } from 'src/students/entities/student.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { AttendanceGateway } from '../socket/attendance.socket';
 import { Repository } from 'typeorm';
+import { Semester } from 'src/semesters/entities/semester.entity';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
-    TypeOrmModule.forFeature([Level, Course, Attendance, Student, Staff]),
+    TypeOrmModule.forFeature([
+      Level,
+      Course,
+      Attendance,
+      Student,
+      Staff,
+      Semester,
+    ]),
   ],
 
   providers: [
