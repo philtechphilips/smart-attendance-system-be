@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Level } from 'src/levels/entities/level.entity';
 import { Program } from 'src/programs/entities/program.entity';
 import { Semester } from 'src/semesters/entities/semester.entity';
-import { Session } from 'src/sessions/entities/session.entity';
+import { Sessions } from 'src/sessions/entities/session.entity';
 import { DataSource } from 'typeorm';
 
 @Injectable()
@@ -10,7 +10,7 @@ export class SeedService {
   constructor(private readonly dataSource: DataSource) {}
 
   async run() {
-    const sessionRepository = this.dataSource.getRepository(Session);
+    const sessionRepository = this.dataSource.getRepository(Sessions);
     const semesterRepository = this.dataSource.getRepository(Semester);
     const levelRepository = this.dataSource.getRepository(Level);
     const programRepository = this.dataSource.getRepository(Program);
@@ -54,7 +54,7 @@ export class SeedService {
     }
 
     // Create sessions and associate semesters
-    const session1 = new Session();
+    const session1 = new Sessions();
     session1.name = '2023/2024';
     session1.semesters = [
       await semesterRepository.save(
@@ -65,7 +65,7 @@ export class SeedService {
       ),
     ];
 
-    const session2 = new Session();
+    const session2 = new Sessions();
     session2.name = '2024/2025';
     session2.semesters = [
       await semesterRepository.save(

@@ -12,7 +12,7 @@ export class SchedulingService {
     private readonly courseRepository: CourseRepo,
   ) {}
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_DAY_AT_7AM)
   async autoMarkAbsentForLevelAndCourse() {
     const today = new Date();
 

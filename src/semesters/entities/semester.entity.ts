@@ -1,4 +1,4 @@
-import { Session } from 'src/sessions/entities/session.entity';
+import { Sessions } from 'src/sessions/entities/session.entity';
 import {
   Column,
   CreateDateColumn,
@@ -19,10 +19,10 @@ export class Semester {
   @Column({ default: false })
   active: boolean;
 
-  @ManyToOne(() => Session, (session) => session.semesters, {
+  @ManyToOne(() => Sessions, (session) => session.semesters, {
     onDelete: 'CASCADE',
   })
-  session: Session;
+  session: Sessions;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -30,3 +30,4 @@ export class Semester {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }
+
