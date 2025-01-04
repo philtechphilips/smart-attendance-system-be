@@ -44,6 +44,13 @@ export class CoursesController {
     return this.coursesService.getDepartmentCourses(pagination, user);
   }
 
+  @Get('/course/attendance/:id')
+  @Roles(Role.HOD)
+  getCoursesAttendance(@Param('id') id: string, @Req() req) {
+    const user = req.user;
+    return this.coursesService.getAttendanceByCourse(id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.coursesService.findOne(id);
