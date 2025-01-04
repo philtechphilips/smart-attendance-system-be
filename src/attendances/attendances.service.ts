@@ -92,24 +92,6 @@ export class AttendancesService {
   }
 
   /**
-   * Get attendance records by course
-   * @param courseId - UUID of the course
-   */
-  async getAttendanceByCourse(courseId: string): Promise<Attendance[]> {
-    const course = await this.courseRepository.findOne({
-      where: { id: courseId },
-    });
-    if (!course) {
-      throw new NotFoundException(`Course with ID ${courseId} not found`);
-    }
-
-    return this.attendanceRepository.find({
-      where: { course },
-      relations: ['student'], // Eager load the related student data
-    });
-  }
-
-  /**
    * Get attendance records for a specific student
    * @param studentId - UUID of the student
    */

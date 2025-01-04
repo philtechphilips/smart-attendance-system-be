@@ -30,4 +30,3 @@ export class Semester {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }
-
