@@ -203,6 +203,99 @@ export class AttendancesService {
     };
   }
 
+  async getStudentAttendanceDetails(studentId: string) {
+    // Fetch attendance records for the student with proper relations
+    const attendanceRecords = await this.attendanceRepository
+      .createQueryBuilder('attendance')
+      .leftJoinAndSelect('attendance.course', 'course')
+      .leftJoinAndSelect('course.lecturer', 'lecturer')
+      .leftJoinAndSelect('attendance.student', 'student')
+      .leftJoinAndSelect('student.level', 'class')
+      .where('student.id = :studentId', { studentId })
+      .getMany();
+
+    if (attendanceRecords.length === 0) {
+      throw new Error('No attendance records found for the student');
+    }
+
+    // Calculate total classes, present, and absent counts
+    const totalClasses = attendanceRecords.length;
+    const totalPresent = attendanceRecords.filter(
+      (record) => record.status === 'present',
+    ).length;
+    const totalAbsent = totalClasses - totalPresent;
+
+    // Aggregate data per course
+    const courseAttendance = attendanceRecords.reduce((acc, record) => {
+      const courseId = record.course.id;
+      if (!acc[courseId]) {
+        acc[courseId] = {
+          course: record.course,
+          lecturer: record.course.lecturer,
+          present: 0,
+          absent: 0,
+        };
+      }
+      if (record.status === 'present') {
+        acc[courseId].present += 1;
+      } else {
+        acc[courseId].absent += 1;
+      }
+      return acc;
+    }, {});
+
+    // Format course attendance data for the table
+    const courseAttendanceTable = Object.values(courseAttendance).map(
+      (courseData: any) => ({
+        course: courseData?.course,
+        present: courseData.present,
+        absent: courseData.absent,
+        percentage: (
+          (courseData.present / (courseData.present + courseData.absent)) *
+          100
+        ).toFixed(2),
+      }),
+    );
+
+    // Determine the student's class
+    const studentClass = attendanceRecords[0]?.student?.level?.id;
+
+    if (!studentClass) {
+      throw new Error('Student class not found');
+    }
+
+    // Calculate the student's rank in terms of attendance within the same class
+    const allStudentsAttendanceInClass = await this.attendanceRepository
+      .createQueryBuilder('attendance')
+      .leftJoin('attendance.student', 'student')
+      .select('student.id', 'studentId')
+      .addSelect('COUNT(attendance.id)', 'totalClasses')
+      .addSelect(
+        `SUM(CASE WHEN attendance.status = 'present' THEN 1 ELSE 0 END)`,
+        'totalPresent',
+      )
+      .where('student.level = :classId', { classId: studentClass })
+      .groupBy('student.id')
+      .orderBy('totalPresent', 'DESC')
+      .addOrderBy('student.id', 'ASC') // Optional: resolve ties by student ID
+      .getRawMany();
+
+    const studentRank =
+      allStudentsAttendanceInClass.findIndex(
+        (att) => att.studentId === studentId,
+      ) + 1;
+
+    // Return all details
+    return {
+      totalClasses,
+      totalPresent,
+      totalAbsent,
+      courseAttendanceTable,
+      studentRank,
+      totalStudents: allStudentsAttendanceInClass.length,
+    };
+  }
+
   async getAttendanceById(id: string) {
     try {
       const attendance = await this.attendanceRepository

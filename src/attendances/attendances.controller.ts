@@ -52,6 +52,13 @@ export class AttendancesController {
     );
   }
 
+  @Get('/student-attendance/:id')
+  @Roles(Role.HOD)
+  getStudentAttendanceDetails(@Param('id') id: string, @Req() req) {
+    const user = req.user;
+    return this.attendancesService.getStudentAttendanceDetails(id);
+  }
+
   @Get('/:id')
   @Roles(Role.HOD)
   getAttendanceById(@Param('id') id: string) {
