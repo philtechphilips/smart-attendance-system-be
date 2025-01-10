@@ -52,6 +52,11 @@ export class StaffsController {
     return this.staffsService.findOne(id);
   }
 
+  @Get('/courses/:id')
+  getAssignedCourses(@Param('id') id: string) {
+    return this.staffsService.getLecturerCourses(id);
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateStaffDto: UpdateStaffDto) {
     return this.staffsService.update(id, updateStaffDto);

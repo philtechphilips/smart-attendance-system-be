@@ -14,6 +14,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { IPaginationQuery } from 'src/shared/interfaces/date-query';
 import { applyPagination } from 'src/repository/base.repository';
 import { User } from 'src/auth/entities/auth.entity';
+import { Course } from 'src/courses/entities/course.entity';
 
 @Injectable()
 export class StaffsService {
@@ -22,6 +23,8 @@ export class StaffsService {
     private readonly staffRepository: Repository<Staff>,
     @InjectRepository(Department)
     private readonly departmentRepository: Repository<Department>,
+    @InjectRepository(Course)
+    private readonly courseRepository: Repository<Course>,
     private readonly authService: AuthService,
   ) {}
 
@@ -144,6 +147,24 @@ export class StaffsService {
       };
     } catch (error) {
       console.log(error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to fetch staff');
+    }
+  }
+
+  async getLecturerCourses(lecturerId: string) {
+    try {
+      return await this.courseRepository
+        .createQueryBuilder('course')
+        .leftJoinAndSelect('course.lecturer', 'lecturer')
+        .leftJoinAndSelect('course.class', 'class')
+        .leftJoinAndSelect('course.department', 'department')
+        .leftJoinAndSelect('course.program', 'program')
+        .where('lecturer.id = :lecturerId', { lecturerId })
+        .getMany();
+    } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
