@@ -15,10 +15,11 @@ import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { Course } from 'src/courses/entities/course.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Staff, User, Department]),
+    TypeOrmModule.forFeature([Staff, User, Department, Course]),
     ConfigModule.forRoot(),
     JwtModule.registerAsync({
       imports: [ConfigModule],
