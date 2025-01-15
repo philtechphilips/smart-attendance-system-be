@@ -54,7 +54,7 @@ export class DashboardService {
     const departmentWiseAttendance = await this.attendanceRepository
       .createQueryBuilder('attendance')
       .leftJoinAndSelect('attendance.course', 'course')
-      .select('course.department', 'department')
+      .leftJoinAndSelect('course.department', 'department')
       .addSelect('COUNT(*)', 'count')
       .groupBy('course.department')
       .getRawMany();
@@ -62,6 +62,7 @@ export class DashboardService {
     const topLowAttendanceStudents = await this.studentRepository
       .createQueryBuilder('student')
       .leftJoinAndSelect('student.attendances', 'attendance')
+      .leftJoinAndSelect('student.department', 'department')
       .addSelect('COUNT(attendance.id)', 'attendanceCount')
       .groupBy('student.id')
       .orderBy('attendanceCount', 'DESC')
@@ -80,21 +81,17 @@ export class DashboardService {
     const topPerformingDepartments = await this.attendanceRepository
       .createQueryBuilder('attendance')
       .leftJoinAndSelect('attendance.course', 'course')
-      .select('course.department', 'department')
-      .addSelect(
-        "AVG(CASE WHEN attendance.status = 'present' THEN 1 ELSE 0 END)",
-        'averageAttendance',
-      )
-      .groupBy('course.department')
-      .orderBy('averageAttendance', 'DESC')
-      .limit(5)
+      .leftJoinAndSelect('course.department', 'department')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('department.id') // Ensure you group by a unique identifier for departments
+      .orderBy('count', 'DESC') // Order by the count in descending order
+      .limit(5) // Limit the results to 5
       .getRawMany();
 
     // Query for students with critical attendance issues
     const studentsWithCriticalIssues = await this.studentRepository
       .createQueryBuilder('student')
       .leftJoinAndSelect('student.attendances', 'attendance')
-      .select('student.id', 'studentId')
       .addSelect(
         "AVG(CASE WHEN attendance.status = 'present' THEN 1 ELSE 0 END)",
         'averageAttendance',
