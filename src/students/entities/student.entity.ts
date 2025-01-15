@@ -1,3 +1,4 @@
+import { Attendance } from 'src/attendances/entities/attendance.entity';
 import { User } from 'src/auth/entities/auth.entity';
 import { Department } from 'src/departments/entities/department.entity';
 import { Level } from 'src/levels/entities/level.entity';
@@ -9,6 +10,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -87,6 +89,9 @@ export class Student {
   @OneToOne(() => User, { cascade: true })
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @OneToMany(() => Attendance, (attendance) => attendance.student)
+  attendances: Attendance[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
