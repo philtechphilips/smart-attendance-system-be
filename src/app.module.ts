@@ -23,6 +23,7 @@ import { SeedService } from './seeds/seed.service';
 import { ProgramsModule } from './programs/programs.module';
 import * as admin from 'firebase-admin';
 import { SchedulingModule } from './shared/schedule/schedule.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { SchedulingModule } from './shared/schedule/schedule.module';
     SeedModule,
     SchedulingModule,
     ProgramsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
