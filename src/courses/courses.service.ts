@@ -39,9 +39,9 @@ export class CoursesService {
     @InjectRepository(Attendance)
     private readonly attendanceRepository: Repository<Attendance>,
 
-    @InjectRepository(Student)
-    private readonly studentRepository: Repository<Student>,
-  ) {}
+    @InjectRepository(Staff)
+    private readonly lecturerRepository: Repository<Staff>,
+  ) { }
 
   async create(createCourseDto: CreateCourseDto): Promise<Course> {
     const { departmentId, classId, lecturerId, programId, ...courseData } =
@@ -229,71 +229,92 @@ export class CoursesService {
     };
   }
 
-  async findOne(id: string): Promise<Course> {
-    const course = await this.courseRepository.findOne({
-      where: { id },
-      relations: ['lecturer', 'class', 'department', 'program'],
+  async getLecturerCourses(id: string) {
+
+    const lecturer = await this.lecturerRepository.findOne({
+      where: { user :{
+      id
+    }}
     });
-    if (!course) {
-      throw new NotFoundException(`Course with ID ${id} not found`);
-    }
+
+  // Step 1: Ensure the course exists
+  const course = await this.courseRepository.find({
+    where: {
+      lecturer: {
+        id: lecturer.id
+      }
+    },
+    relations: ['class'], // Assuming course has a classLevel relation
+  });
+
+  return{course}
+}
+
+  async findOne(id: string): Promise < Course > {
+  const course = await this.courseRepository.findOne({
+    where: { id },
+    relations: ['lecturer', 'class', 'department', 'program'],
+  });
+  if(!course) {
+    throw new NotFoundException(`Course with ID ${id} not found`);
+  }
     return course;
+}
+
+  async update(id: string, updateCourseDto: UpdateCourseDto): Promise < Course > {
+  const { departmentId, classId, lecturerId, programId, ...updateData } =
+    updateCourseDto;
+
+  const course = await this.findOne(id);
+
+  if(departmentId) {
+    const department = await this.departmentRepository.findOne({
+      where: { id: departmentId },
+    });
+    if (!department) {
+      throw new NotFoundException(
+        `Department with ID ${departmentId} not found`,
+      );
+    }
+    course.department = department;
   }
 
-  async update(id: string, updateCourseDto: UpdateCourseDto): Promise<Course> {
-    const { departmentId, classId, lecturerId, programId, ...updateData } =
-      updateCourseDto;
-
-    const course = await this.findOne(id);
-
-    if (departmentId) {
-      const department = await this.departmentRepository.findOne({
-        where: { id: departmentId },
-      });
-      if (!department) {
-        throw new NotFoundException(
-          `Department with ID ${departmentId} not found`,
-        );
-      }
-      course.department = department;
+    if(classId) {
+    const level = await this.levelRepository.findOne({
+      where: { id: classId },
+    });
+    if (!level) {
+      throw new NotFoundException(`Level with ID ${classId} not found`);
     }
+    course.class = level;
+  }
 
-    if (classId) {
-      const level = await this.levelRepository.findOne({
-        where: { id: classId },
-      });
-      if (!level) {
-        throw new NotFoundException(`Level with ID ${classId} not found`);
-      }
-      course.class = level;
+    if(programId) {
+    const program = await this.programRepository.findOne({
+      where: { id: programId },
+    });
+    if (!program) {
+      throw new NotFoundException(`Program with ID ${programId} not found`);
     }
+    course.program = program;
+  }
 
-    if (programId) {
-      const program = await this.programRepository.findOne({
-        where: { id: programId },
-      });
-      if (!program) {
-        throw new NotFoundException(`Program with ID ${programId} not found`);
-      }
-      course.program = program;
+    if(lecturerId) {
+    const lecturer = await this.staffRepository.findOne({
+      where: { id: lecturerId },
+    });
+    if (!lecturer) {
+      throw new NotFoundException(`Lecturer with ID ${lecturerId} not found`);
     }
-
-    if (lecturerId) {
-      const lecturer = await this.staffRepository.findOne({
-        where: { id: lecturerId },
-      });
-      if (!lecturer) {
-        throw new NotFoundException(`Lecturer with ID ${lecturerId} not found`);
-      }
-      course.lecturer = lecturer;
-    }
+    course.lecturer = lecturer;
+  }
 
     Object.assign(course, updateData);
-    return await this.courseRepository.save(course);
-  }
+  return await this.courseRepository.save(course);
+}
 
-  async remove(id: string): Promise<void> {
-    const course = await this.findOne(id);
-    await this.courseRepository.remove(course);
-  }
+  async remove(id: string): Promise < void> {
+  const course = await this.findOne(id);
+  await this.courseRepository.remove(course);
+}
 }
