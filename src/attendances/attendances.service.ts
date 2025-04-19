@@ -18,6 +18,12 @@ import { AttendanceQueryDto } from 'src/shared/dto/attendance.dto';
 import { AttendanceGateway } from 'src/shared/socket/attendance.socket';
 import { Level } from 'src/levels/entities/level.entity';
 import { Semester } from 'src/semesters/entities/semester.entity';
+import * as path from 'path';
+import { extname } from 'path';
+import axios from 'axios';
+import * as FormData from 'form-data';
+import * as fs from 'fs';
+import { tmpdir } from 'os';
 
 @Injectable()
 export class AttendancesService {
@@ -35,7 +41,7 @@ export class AttendancesService {
     @InjectRepository(Semester)
     private readonly semesterRepository: Repository<Semester>,
     private readonly attendanceGateway: AttendanceGateway,
-  ) {}
+  ) { }
 
   /**
    * Create a new attendance record
@@ -89,6 +95,236 @@ export class AttendancesService {
     });
 
     return this.attendanceRepository.save(attendance);
+  }
+
+  // async mark(id: string, base64Image : any) {
+
+  //   let filePath: string;
+  //   let filename: string;
+
+  //   // Create temporary directory if it doesn't exist
+  //   const tempDir = path.join(tmpdir(), 'luxand-uploads');
+  //   if (!fs.existsSync(tempDir)) {
+  //     fs.mkdirSync(tempDir, { recursive: true });
+  //   }
+
+  //   if (base64Image) {
+  //     // Handle base64 image
+  //     const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
+  //     const buffer = Buffer.from(base64Data, 'base64');
+  //     filename = `profile-${id}-${Date.now()}.jpg`;
+  //     filePath = path.join(tempDir, filename);
+  //     fs.writeFileSync(filePath, buffer);
+  //   }
+
+  //   // Create form data for Luxand Cloud
+  //   const form = new FormData();
+  //   form.append('photos', fs.createReadStream(filePath), filename);
+  //   form.append('name', `User ${id}`);
+  //   form.append('store', '1');
+
+  //   const headers = {
+  //     'token': '3de8b7510348486e838e2bd09541deef',
+  //     ...form.getHeaders(),
+  //   };
+
+  //   // Upload to Luxand Cloud
+  //   const response = await axios.post('https://api.luxand.cloud/photo/search/v2', form, { headers });
+
+  //   // Clean up: delete the temporary file
+  //   try {
+  //     fs.unlinkSync(filePath);
+  //   } catch (cleanupError) {
+  //     console.warn('Failed to delete temporary file:', cleanupError);
+  //   }
+
+  //   console.log(response.data, "respose")
+
+
+
+  //   // const student = await this.studentRepository.findOne({ 
+  //   //   where: { 
+  //   //     user: { id } // Query using the relationship property "user" and its "id"
+  //   //   } 
+  //   // });
+
+  //   // student.imageId = response?.data?.faces[0]?.uuid;
+  //   // student.imageUrl = response?.data?.faces[0]?.url;
+  //   // await this.studentRepository.save(student);
+
+  //   return {
+  //     success: true,
+  //     message: 'Profile uploaded to Luxand Cloud successfully',
+  //     luxandResponse: response.data,
+  //   };
+  //   // const { studentId, courseId, status } = createAttendanceDto;
+
+  //   // // Validate Student
+  //   // const student = await this.studentRepository.findOne({
+  //   //   where: { id: studentId },
+  //   //   relations: ['level'],
+  //   // });
+
+  //   // if (!student) {
+  //   //   throw new NotFoundException(`Student with ID ${studentId} not found`);
+  //   // }
+
+  //   // const semester = await this.semesterRepository.findOne({
+  //   //   where: { active: true },
+  //   // });
+
+  //   // if (!semester) {
+  //   //   throw new NotFoundException(`No active Semester`);
+  //   // }
+
+  //   // // Validate Course
+  //   // const course = await this.courseRepository.findOne({
+  //   //   where: { id: courseId },
+  //   //   relations: ['class'],
+  //   // });
+
+  //   // if (!course) {
+  //   //   throw new NotFoundException(`Course with ID ${courseId} not found`);
+  //   // }
+
+  //   // if (course.class.id !== student.level.id) {
+  //   //   throw new BadRequestException(
+  //   //     `Student level and course level does not match!`,
+  //   //   );
+  //   // }
+
+  //   // // Create and save attendance
+  //   // const attendance = this.attendanceRepository.create({
+  //   //   student,
+  //   //   course,
+  //   //   semester,
+  //   //   status: status || 'absent',
+  //   // });
+
+  //   // return this.attendanceRepository.save(attendance);
+  // }
+
+  async mark(id: string, base64Image: any) {
+    let filePath: string;
+    let filename: string;
+
+    try {
+      // Create temporary directory if it doesn't exist
+      const tempDir = path.join(tmpdir(), 'luxand-uploads');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+
+      if (base64Image) {
+        // Handle base64 image
+        const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        filename = `profile-${id}-${Date.now()}.jpg`;
+        filePath = path.join(tempDir, filename);
+
+        // Write file synchronously to ensure it exists before reading
+        fs.writeFileSync(filePath, buffer);
+
+        // Verify file exists before proceeding
+        if (!fs.existsSync(filePath)) {
+          throw new Error('Failed to create temporary file');
+        }
+      } else {
+        throw new Error('No image provided');
+      }
+
+      // Create form data for Luxand Cloud
+      const form = new FormData();
+      form.append('collections', '');
+      form.append('photo', fs.createReadStream(filePath), filename);
+
+      const headers = {
+        'token': '',
+        ...form.getHeaders(),
+      };
+
+      // Upload to Luxand Cloud
+      const response = await axios.post('https://api.luxand.cloud/photo/search/v2', form, {
+        headers,
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
+      });
+
+      console.log(response.data)
+
+
+      // Clean up: delete the temporary file
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (cleanupError) {
+        console.warn('Failed to delete temporary file:', cleanupError);
+      }
+      const student = await this.studentRepository.findOne({
+        where: { imageId: response.data[0].uuid },
+        relations: ['level'],
+      });
+
+      if (!student) {
+        throw new NotFoundException(`Student with ImageID ${response.data[0].uuid} not found`);
+      }
+
+      const semester = await this.semesterRepository.findOne({
+        where: { active: true },
+      });
+
+      if (!semester) {
+        throw new NotFoundException(`No active Semester`);
+      }
+
+      // Validate Course
+      const course = await this.courseRepository.findOne({
+        where: { id },
+        relations: ['class'],
+      });
+
+      if (!course) {
+        throw new NotFoundException(`Course with ID ${id} not found`);
+      }
+
+      if (course.class.id !== student.level.id) {
+        throw new BadRequestException(
+          `Student level and course level does not match!`,
+        );
+      }
+
+      // Create and save attendance
+      const attendance = this.attendanceRepository.create({
+        student,
+        course,
+        semester,
+        status: 'present',
+      });
+
+      console.log(attendance)
+
+      await this.attendanceRepository.save(attendance);
+
+
+      return {
+        success: true,
+        message: 'Profile uploaded to Luxand Cloud successfully',
+        luxandResponse: response.data,
+      };
+    } catch (error) {
+      // Clean up temp file if it exists (even in error case)
+      if (filePath && fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+        } catch (cleanupError) {
+          console.warn('Failed to delete temporary file during error cleanup:', cleanupError);
+        }
+      }
+
+      console.error('Error in mark function:', error);
+      throw new Error('Failed to process image upload');
+    }
   }
 
   /**
@@ -296,6 +532,108 @@ export class AttendancesService {
     };
   }
 
+  async getAStudentAttendanceDetails(id: string) {
+
+    const student = await this.studentRepository.findOne({
+      where: {
+        user: { id: id } // Query using the relationship property "user" and its "id"
+      }
+    });
+
+    const studentId = student.id;
+
+    // Fetch attendance records for the student with proper relations
+    const attendanceRecords = await this.attendanceRepository
+      .createQueryBuilder('attendance')
+      .leftJoinAndSelect('attendance.course', 'course')
+      .leftJoinAndSelect('course.lecturer', 'lecturer')
+      .leftJoinAndSelect('attendance.student', 'student')
+      .leftJoinAndSelect('student.level', 'class')
+      .where('student.id = :studentId', { studentId })
+      .getMany();
+
+    if (attendanceRecords.length === 0) {
+      throw new Error('No attendance records found for the student');
+    }
+
+    // Calculate total classes, present, and absent counts
+    const totalClasses = attendanceRecords.length;
+    const totalPresent = attendanceRecords.filter(
+      (record) => record.status === 'present',
+    ).length;
+    const totalAbsent = totalClasses - totalPresent;
+
+    // Aggregate data per course
+    const courseAttendance = attendanceRecords.reduce((acc, record) => {
+      const courseId = record.course.id;
+      if (!acc[courseId]) {
+        acc[courseId] = {
+          course: record.course,
+          lecturer: record.course.lecturer,
+          present: 0,
+          absent: 0,
+        };
+      }
+      if (record.status === 'present') {
+        acc[courseId].present += 1;
+      } else {
+        acc[courseId].absent += 1;
+      }
+      return acc;
+    }, {});
+
+    // Format course attendance data for the table
+    const courseAttendanceTable = Object.values(courseAttendance).map(
+      (courseData: any) => ({
+        course: courseData?.course,
+        present: courseData.present,
+        absent: courseData.absent,
+        percentage: (
+          (courseData.present / (courseData.present + courseData.absent)) *
+          100
+        ).toFixed(2),
+      }),
+    );
+
+    // Determine the student's class
+    const studentClass = attendanceRecords[0]?.student?.level?.id;
+
+    if (!studentClass) {
+      throw new Error('Student class not found');
+    }
+
+    // Calculate the student's rank in terms of attendance within the same class
+    const allStudentsAttendanceInClass = await this.attendanceRepository
+      .createQueryBuilder('attendance')
+      .leftJoin('attendance.student', 'student')
+      .select('student.id', 'studentId')
+      .addSelect('COUNT(attendance.id)', 'totalClasses')
+      .addSelect(
+        `SUM(CASE WHEN attendance.status = 'present' THEN 1 ELSE 0 END)`,
+        'totalPresent',
+      )
+      .where('student.level = :classId', { classId: studentClass })
+      .groupBy('student.id')
+      .orderBy('totalPresent', 'DESC')
+      .addOrderBy('student.id', 'ASC') // Optional: resolve ties by student ID
+      .getRawMany();
+
+    const studentRank =
+      allStudentsAttendanceInClass.findIndex(
+        (att) => att.studentId === studentId,
+      ) + 1;
+
+    // Return all details
+    return {
+      totalClasses,
+      totalPresent,
+      totalAbsent,
+      courseAttendanceTable,
+      studentRank,
+      totalStudents: allStudentsAttendanceInClass.length,
+    };
+  }
+
   async getAttendanceById(id: string) {
     try {
       const attendance = await this.attendanceRepository
@@ -395,6 +733,8 @@ export class AttendancesService {
       semester,
       status: 'absent' as const, // Correctly typed status
     }));
+
+    console.log(absentRecords)
 
     await this.attendanceRepository.save(absentRecords);
 

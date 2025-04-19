@@ -22,7 +22,6 @@ export class RegisterAuthDto {
   @IsNotEmpty()
   email: string;
 
-  @IsEmail()
   @Optional()
   role?: string;
 

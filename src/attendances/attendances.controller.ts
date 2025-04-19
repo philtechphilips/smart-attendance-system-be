@@ -10,17 +10,20 @@ import {
   ValidationPipe,
   Query,
   Req,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { AttendancesService } from './attendances.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/auth/decorators/role.decorators';
 import { Role } from 'src/shared/enums/role.enum';
 import { CustomValidationPipe } from 'src/shared/utils/instances';
 import { PaginationDto } from 'src/shared/dto/pagination.dto';
 import { AttendanceQueryDto } from 'src/shared/dto/attendance.dto';
 import { DateFilter } from 'src/utils/date-filter';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Attendance')
 @ApiBearerAuth('access-token')
@@ -35,7 +38,7 @@ export class AttendancesController {
   }
 
   @Get('/departmental-attendance')
-  @Roles(Role.HOD)
+  @Roles(Role.HOD, Role.LECTURER)
   getAllDepartmentStudent(
     @Req() req,
     @Query(CustomValidationPipe) pagination: PaginationDto,
@@ -53,15 +56,33 @@ export class AttendancesController {
   }
 
   @Get('/student-attendance/:id')
-  @Roles(Role.HOD)
   getStudentAttendanceDetails(@Param('id') id: string, @Req() req) {
     const user = req.user;
     return this.attendancesService.getStudentAttendanceDetails(id);
   }
+
+  @Get('/student-attendance-record/:id')
+  getAStudentAttendanceDetails(@Param('id') id: string, @Req() req) {
+    const user = req.user;
+    return this.attendancesService.getAStudentAttendanceDetails(id);
+  }
+
 
   @Get('/:id')
   @Roles(Role.HOD)
   getAttendanceById(@Param('id') id: string) {
     return this.attendancesService.getAttendanceById(id);
   }
+
+  @Post('/capture')
+    @UseInterceptors(FileInterceptor('file'))
+    @ApiConsumes('multipart/form-data')
+    async uploadProfile(
+      @UploadedFile() file: any,
+      @Req() req,
+    ) {
+      const base64Image = req.body.image;
+      
+      return this.attendancesService.mark(req.body.courseId, base64Image);
+}
 }

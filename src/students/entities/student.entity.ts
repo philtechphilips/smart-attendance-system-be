@@ -61,6 +61,12 @@ export class Student {
   guardianAddress: string;
 
   @Column()
+  imageId: string;
+
+  @Column()
+  imageUrl: string;
+
+  @Column()
   guardianEmail: string;
 
   @Column()

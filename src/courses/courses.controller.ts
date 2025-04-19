@@ -51,6 +51,13 @@ export class CoursesController {
     return this.coursesService.getAttendanceByCourse(id);
   }
 
+  @Get('/lecturer/:id')
+  @Roles(Role.LECTURER)
+  getCoursesForLecturer(@Param('id') id: string, @Req() req) {
+    const user = req.user;
+    return this.coursesService.getLecturerCourses(id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.coursesService.findOne(id);

@@ -10,8 +10,11 @@ import {
   ValidationPipe,
   Query,
   Req,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
@@ -20,6 +23,7 @@ import { CustomValidationPipe } from 'src/shared/utils/instances';
 import { PaginationDto } from 'src/shared/dto/pagination.dto';
 import { Role } from 'src/shared/enums/role.enum';
 import { Roles } from 'src/auth/decorators/role.decorators';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Students')
 @ApiBearerAuth('access-token')
@@ -63,4 +67,19 @@ export class StudentsController {
   remove(@Param('id') id: string) {
     return this.studentsService.remove(id);
   }
+
+  @Post(':id/upload-profile')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  async uploadProfile(
+    @Param('id') id: string,
+    @UploadedFile() file: any,
+    @Req() req,
+  ) {
+    const base64Image = req.body.profileImage;
+    console.log(id)
+    return this.studentsService.uploadImage(id, base64Image);
+  }
+  
+
 }
