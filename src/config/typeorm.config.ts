@@ -11,9 +11,10 @@ export const datasourceOptions: DataSourceOptions = {
   password: process.env.DB_PASSWORD,
   entities: ['dist/**/*.entity.js'],
   migrations: [__dirname + '/../database/*{.ts,.js}'],
-  extra: {
-    charset: 'utf8mb4_unicode_ci',
-  },
+  // extra: {
+  //   charset: 'utf8mb4_unicode_ci',
+  // },
+  driver: require('mysql2'),
 
   synchronize: false,
   logging: false,
