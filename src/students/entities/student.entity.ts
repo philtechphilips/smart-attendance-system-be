@@ -63,6 +63,9 @@ export class Student {
   @Column()
   imageId: string;
 
+  @Column({ type: 'longblob', nullable: true })
+  image: Buffer;
+
   @Column()
   imageUrl: string;
 

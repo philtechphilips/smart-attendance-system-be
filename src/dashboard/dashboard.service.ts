@@ -50,62 +50,78 @@ export class DashboardService {
       .groupBy('DATE(attendance.timestamp)')
       .orderBy('DATE(attendance.timestamp)', 'ASC')
       .getRawMany();
-
+  
     const departmentWiseAttendance = await this.attendanceRepository
       .createQueryBuilder('attendance')
-      .leftJoinAndSelect('attendance.course', 'course')
-      .leftJoinAndSelect('course.department', 'department')
+      .leftJoin('attendance.course', 'course')
+      .leftJoin('course.department', 'department')
+      .select('department.id', 'departmentId')
+      .addSelect('department.name', 'departmentName')
       .addSelect('COUNT(*)', 'count')
-      .groupBy('course.department')
+      .groupBy('department.id')
+      .addGroupBy('department.name')
       .getRawMany();
-
+  
     const topLowAttendanceStudents = await this.studentRepository
       .createQueryBuilder('student')
-      .leftJoinAndSelect('student.attendances', 'attendance')
-      .leftJoinAndSelect('student.department', 'department')
+      .leftJoin('student.attendances', 'attendance')
+      .leftJoin('student.department', 'department')
+      .select('student.id', 'studentId')
+      .addSelect('student.lastname', 'studentName')
+      .addSelect('department.name', 'departmentName')
       .addSelect('COUNT(attendance.id)', 'attendanceCount')
       .groupBy('student.id')
+      .addGroupBy('student.lastname')
+      .addGroupBy('department.name')
       .orderBy('attendanceCount', 'DESC')
       .limit(10)
       .getRawMany();
-
+  
     return {
       overallAttendanceTrends,
       departmentWiseAttendance,
-      topLowAttendanceStudents,
+      topLowAttendanceStudents, 
     };
   }
+  
 
   async studentDepartmentPerformance() {
-    // Query for top-performing departments
+    // ✅ Top-performing departments by attendance count
     const topPerformingDepartments = await this.attendanceRepository
       .createQueryBuilder('attendance')
-      .leftJoinAndSelect('attendance.course', 'course')
-      .leftJoinAndSelect('course.department', 'department')
-      .addSelect('COUNT(*)', 'count')
-      .groupBy('department.id') // Ensure you group by a unique identifier for departments
-      .orderBy('count', 'DESC') // Order by the count in descending order
-      .limit(5) // Limit the results to 5
+      .leftJoin('attendance.course', 'course')
+      .leftJoin('course.department', 'department')
+      .select('department.id', 'departmentId')
+      .addSelect('department.name', 'departmentName')
+      .addSelect('COUNT(*)', 'attendanceCount')
+      .groupBy('department.id')
+      .addGroupBy('department.name')
+      .orderBy('attendanceCount', 'DESC')
+      .limit(5)
       .getRawMany();
-
-    // Query for students with critical attendance issues
+  
+    // ✅ Students with attendance rate below 75%
     const studentsWithCriticalIssues = await this.studentRepository
       .createQueryBuilder('student')
-      .leftJoinAndSelect('student.attendances', 'attendance')
+      .leftJoin('student.attendances', 'attendance')
+      .select('student.id', 'studentId')
+      .addSelect('student.firstname', 'firstname')
+      .addSelect('student.lastname', 'lastname')
       .addSelect(
         "AVG(CASE WHEN attendance.status = 'present' THEN 1 ELSE 0 END)",
-        'averageAttendance',
+        'averageAttendance'
       )
       .groupBy('student.id')
-      .having(
-        "AVG(CASE WHEN attendance.status = 'present' THEN 1 ELSE 0 END) < :threshold",
-        { threshold: 0.75 },
-      )
+      .addGroupBy('student.firstname')
+      .addGroupBy('student.lastname')
+      .having('AVG(CASE WHEN attendance.status = \'present\' THEN 1 ELSE 0 END) < :threshold', {
+        threshold: 0.75,
+      })
       .getRawMany();
-
+  
     return {
       topPerformingDepartments,
       studentsWithCriticalIssues,
     };
-  }
+  }  
 }

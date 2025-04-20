@@ -21,6 +21,7 @@ export class AuthService {
 
   async validateUser({ email, password }: CreateAuthDto) {
     try {
+      console.log(email, password)
       const findUser = await this.authRepo.findOne({ email });
 
       if (!findUser) throw new HttpException('Invalid credentials!', 400);
@@ -29,12 +30,15 @@ export class AuthService {
         findUser.password,
       );
 
+      console.log(findUser, decryptPassword)
+
       if (decryptPassword) {
         const { password, ...user } = findUser;
         const token = this.jwtService.sign(user);
         return { ...user, token };
       }
     } catch (error) {
+      console.log(error)
       throw new HttpException(error, 500);
     }
   }

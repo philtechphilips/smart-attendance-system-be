@@ -160,7 +160,7 @@ export class StudentsService {
 
       if (
         error instanceof NotFoundException ||
-        error instanceof ConflictException
+        error instanceof ConflictException 
       ) {
         throw error;
       }
@@ -267,67 +267,36 @@ export class StudentsService {
     }
   }
 
-  async uploadImage(id: string, base64Image: any){
+  async uploadImage(id: string, base64Image: any) {
     try {
-      let filePath: string;
-      let filename: string;
-  
-      // Create temporary directory if it doesn't exist
-      const tempDir = path.join(tmpdir(), 'luxand-uploads');
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
-  
       if (base64Image) {
         // Handle base64 image
         const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
         const buffer = Buffer.from(base64Data, 'base64');
-        filename = `profile-${id}-${Date.now()}.jpg`;
-        filePath = path.join(tempDir, filename);
-        fs.writeFileSync(filePath, buffer);
-      }
-  
-      // Create form data for Luxand Cloud
-      const form = new FormData();
-      form.append('photos', fs.createReadStream(filePath), filename);
-      form.append('name', `User ${id}`);
-      form.append('store', '1');
-  
-      const headers = {
-        'token': '',
-        ...form.getHeaders(),
-      };
-  
-      // Upload to Luxand Cloud
-      const response = await axios.post('https://api.luxand.cloud/v2/person', form, { headers });
-  
-      // Clean up: delete the temporary file
-      try {
-        fs.unlinkSync(filePath);
-      } catch (cleanupError) {
-        console.warn('Failed to delete temporary file:', cleanupError);
+
+        // Update the student's image buffer in the database
+        const student = await this.studentRepository.findOne({
+          where: {
+            user: { id } // Query using the relationship property "user" and its "id"
+          }
+        });
+
+        // Assuming you have an imageBuffer field in your Student entity
+        student.image = buffer; // Store the buffer directly
+        await this.studentRepository.save(student);
+
+        return {
+          success: true,
+          message: 'Profile image uploaded successfully',
+          userId: id,
+        };
+      } else {
+        throw new Error('No image data provided');
       }
 
-      const student = await this.studentRepository.findOne({ 
-        where: { 
-          user: { id } // Query using the relationship property "user" and its "id"
-        } 
-      });
-   
-      student.imageId = response?.data?.faces[0]?.uuid;
-      student.imageUrl = response?.data?.faces[0]?.url;
-      await this.studentRepository.save(student);
-
-      return {
-        success: true,
-        message: 'Profile uploaded to Luxand Cloud successfully',
-        luxandResponse: response.data,
-        userId: id,
-      };
-      
     } catch (error) {
-      console.error('Error uploading to Luxand Cloud:', error);
-      throw new Error(`Failed to upload profile to Luxand Cloud: ${error.message}`);
+      console.error('Error uploading image:', error);
+      throw new Error(`Failed to upload profile image: ${error.message}`);
     }
   }
 
