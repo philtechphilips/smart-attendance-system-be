@@ -21,3 +21,36 @@ export class CreateAttendanceDto {
   })
   status?: 'present' | 'absent' | 'late';
 }
+
+
+export class MarkAttendanceDto {
+  @ApiProperty({
+    description: 'The ID of the student',
+    example: '12345',
+  })
+  studentId: string;
+
+  @ApiProperty({
+    description: 'The ID of the course',
+    example: 'CS101',
+  })
+  courseId: string;
+
+  @ApiProperty({
+    description: 'The base 64 of the image',
+    example: '',
+  })
+  image: string;
+
+  @ApiProperty({
+    description: 'The matric number of the student',
+    example: '',
+  })
+  matricNo: string;
+
+  @ApiProperty({
+    description: 'The timestamp of the attendance',
+    example: '',
+  })
+  timestamp: Date;
+}

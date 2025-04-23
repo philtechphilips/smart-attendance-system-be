@@ -7,7 +7,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { Attendance } from './entities/attendance.entity';
-import { CreateAttendanceDto } from './dto/create-attendance.dto';
+import {
+  CreateAttendanceDto,
+  MarkAttendanceDto,
+} from './dto/create-attendance.dto';
 import { Student } from 'src/students/entities/student.entity';
 import { Course } from 'src/courses/entities/course.entity';
 import { User } from 'src/auth/entities/auth.entity';
@@ -91,10 +94,90 @@ export class AttendancesService {
     return this.attendanceRepository.save(attendance);
   }
 
-  async mark(courseId: string, base64Image: string) {
+  async mark(data: MarkAttendanceDto) {
     try {
-      return true;
-    } catch (error) {}
+      const { studentId, courseId, image } = data;
+
+      // Validate Student
+      const student = await this.studentRepository.findOne({
+        where: { id: studentId },
+        relations: ['level'],
+      });
+
+      if (!student) {
+        throw new NotFoundException(`Student with ID ${studentId} not found`);
+      }
+
+      // Validate Course
+      const course = await this.courseRepository.findOne({
+        where: { id: courseId },
+        relations: ['class'],
+      });
+
+      if (!course) {
+        throw new NotFoundException(`Course with ID ${courseId} not found`);
+      }
+
+      if (course.class.id !== student.level.id) {
+        throw new BadRequestException(
+          `Student level and course level do not match!`,
+        );
+      }
+
+      const semester = await this.semesterRepository.findOne({
+        where: { active: true },
+      });
+
+      if (!semester) {
+        throw new NotFoundException(`No active Semester`);
+      }
+
+      // Check if attendance already exists for the student, course, and semester
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const existingAttendance = await this.attendanceRepository.findOne({
+        where: {
+          student: { id: studentId },
+          course: { id: courseId },
+          semester: { id: semester.id },
+          timestamp: Between(startOfDay, endOfDay),
+        },
+      });
+
+      if (existingAttendance) {
+        return {
+          statusCode: 400,
+          message: `Attendance has already been recorded for ${student.firstname} ${student.lastname} on this day.`,
+          attendance: existingAttendance,
+          success: false,
+        };
+      }
+
+      // Create and save new attendance record
+      const attendance = this.attendanceRepository.create({
+        student,
+        course,
+        semester,
+        status: 'present',
+        image: Buffer.from(image, 'base64'),
+      });
+
+      const savedAttendance = await this.attendanceRepository.save(attendance);
+
+      return {
+        statusCode: 201,
+        message: `Attendance marked successfully for ${student.firstname} ${student.lastname}`,
+        attendance: savedAttendance,
+        success: true,
+      };
+    } catch (error) {
+      console.log(error)
+      throw new HttpException(error.message || 'Error marking attendance', 500);
+    }
   }
 
   /**

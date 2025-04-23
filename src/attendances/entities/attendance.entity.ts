@@ -29,6 +29,9 @@ export class Attendance {
   @JoinColumn({ name: 'student_id' })
   student: Student;
 
+  @Column({ type: 'longblob', nullable: true })
+  image: Buffer;
+
   @ManyToOne(() => Semester, (semester) => semester.id, { nullable: true })
   @JoinColumn({ name: 'semester_id' })
   semester: Semester;

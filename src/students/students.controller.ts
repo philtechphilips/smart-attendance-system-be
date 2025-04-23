@@ -44,7 +44,7 @@ export class StudentsController {
   }
 
   @Get('/departmental-students')
-  @Roles(Role.HOD)
+  @Roles(Role.HOD, Role.LECTURER)
   getAllDepartmentStudent(
     @Query(CustomValidationPipe) pagination: PaginationDto,
     @Req() req,

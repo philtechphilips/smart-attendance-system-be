@@ -78,11 +78,11 @@ export class AttendancesController {
     @UseInterceptors(FileInterceptor('file'))
     @ApiConsumes('multipart/form-data')
     async uploadProfile(
-      @UploadedFile() file: any,
       @Req() req,
     ) {
       const base64Image = req.body.image;
       
-      return this.attendancesService.mark(req.body.courseId, base64Image);
+      const data = req.body;
+      return this.attendancesService.mark(data);
 }
 }
