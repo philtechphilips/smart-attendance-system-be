@@ -1,4 +1,5 @@
 import { User } from 'src/auth/entities/auth.entity';
+import { Course } from 'src/courses/entities/course.entity';
 import { Department } from 'src/departments/entities/department.entity';
 import {
   Column,
@@ -9,6 +10,8 @@ import {
   ManyToOne,
   OneToOne,
   JoinColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 
 @Entity({ name: 'staffs' })
@@ -49,6 +52,11 @@ export class Staff {
 
   @ManyToOne(() => Department, (department) => department.id)
   department: Department;
+
+  @ManyToMany(() => Course, (course) => course.lecturer) // Assuming a many-to-many relationship
+  @JoinTable() // This will create a join table for the many-to-many relationship
+  courses: Course[];
+
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

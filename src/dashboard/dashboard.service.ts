@@ -126,4 +126,59 @@ export class DashboardService {
       studentsWithCriticalIssues,
     };
   }
+
+  async staffDashboard(userId: string) {
+    // Fetch the staff member using the userId
+    const staff = await this.lecturerRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ['courses'], // Assuming 'courses' is a relation in the Staff entity
+    });
+
+    if (!staff) {
+      throw new Error('Staff not found');
+    }
+
+    const courses = await this.courseRepository.find({
+      where: { lecturer: { id: staff?.id } }
+    });
+
+    // // Fetch courses assigned to the lecturer
+    // const courses = staff.courses;
+
+    // Count the number of courses
+    const courseCount = courses.length;
+
+    // Initialize variables for student count and attendance count
+    let totalStudents = 0;
+    let totalAttendanceRecords = 0;
+    const studentList = [];
+
+    // Loop through each course to get student counts and attendance
+    for (const course of courses) {
+      // Count students in the course
+      const studentsInCourse = await this.studentRepository
+        .createQueryBuilder('student')
+        .leftJoin('student.level', 'level') // Assuming students are linked to levels
+        .where('level.id = :levelId', { levelId: course.class.id }) // Assuming class is a relation in Course
+        .getMany();
+
+      totalStudents += studentsInCourse.length;
+
+      // Count attendance records for the course
+      const attendanceCount = await this.attendanceRepository.count({
+        where: { course: { id: course.id } },
+      });
+      totalAttendanceRecords += attendanceCount;
+
+      // Add first 15 students to the list
+      studentList.push(...studentsInCourse.slice(0, 15));
+    }
+
+    return {
+      courseCount,
+      totalStudents,
+      totalAttendanceRecords,
+      studentList: studentList.slice(0, 15), // Limit to first 15 students
+    };
+  }
 }
