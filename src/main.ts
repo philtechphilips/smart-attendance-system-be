@@ -9,9 +9,9 @@ async function bootstrap() {
   const logger = new Logger('Server');
   const app = await NestFactory.create(AppModule);
 
-    // Increase limit for JSON and URL-encoded bodies
-    app.use(bodyParser.json({ limit: '50mb' }));
-    app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+  // Increase limit for JSON and URL-encoded bodies
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
   const sawggerConfig = new DocumentBuilder()
     .setTitle('Task Manager documentation')

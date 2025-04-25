@@ -77,9 +77,7 @@ export class StudentsController {
     @Req() req,
   ) {
     const base64Image = req.body.profileImage;
-    console.log(id)
+    console.log(id);
     return this.studentsService.uploadImage(id, base64Image);
   }
-  
-
 }

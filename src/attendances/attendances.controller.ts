@@ -67,7 +67,6 @@ export class AttendancesController {
     return this.attendancesService.getAStudentAttendanceDetails(id);
   }
 
-
   @Get('/:id')
   @Roles(Role.HOD)
   getAttendanceById(@Param('id') id: string) {
@@ -75,14 +74,12 @@ export class AttendancesController {
   }
 
   @Post('/capture')
-    @UseInterceptors(FileInterceptor('file'))
-    @ApiConsumes('multipart/form-data')
-    async uploadProfile(
-      @Req() req,
-    ) {
-      const base64Image = req.body.image;
-      
-      const data = req.body;
-      return this.attendancesService.mark(data);
-}
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  async uploadProfile(@Req() req) {
+    const base64Image = req.body.image;
+
+    const data = req.body;
+    return this.attendancesService.mark(data);
+  }
 }

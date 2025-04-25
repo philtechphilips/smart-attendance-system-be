@@ -175,7 +175,7 @@ export class AttendancesService {
         success: true,
       };
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new HttpException(error.message || 'Error marking attendance', 500);
     }
   }

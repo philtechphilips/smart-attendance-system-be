@@ -160,7 +160,7 @@ export class StudentsService {
 
       if (
         error instanceof NotFoundException ||
-        error instanceof ConflictException 
+        error instanceof ConflictException
       ) {
         throw error;
       }
@@ -277,8 +277,8 @@ export class StudentsService {
         // Update the student's image buffer in the database
         const student = await this.studentRepository.findOne({
           where: {
-            user: { id } // Query using the relationship property "user" and its "id"
-          }
+            user: { id }, // Query using the relationship property "user" and its "id"
+          },
         });
 
         // Assuming you have an imageBuffer field in your Student entity
@@ -293,7 +293,6 @@ export class StudentsService {
       } else {
         throw new Error('No image data provided');
       }
-
     } catch (error) {
       console.error('Error uploading image:', error);
       throw new Error(`Failed to upload profile image: ${error.message}`);

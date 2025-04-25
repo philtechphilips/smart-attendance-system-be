@@ -14,7 +14,9 @@ import { Socket, Server } from 'socket.io';
     methods: ['GET', 'POST'],
   },
 })
-export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class SignalingGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   private peers: Record<string, string[]> = {};
   private server: Server;
 
@@ -30,7 +32,10 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage('join-room')
-  handleJoinRoom(@MessageBody() room: string, @ConnectedSocket() client: Socket) {
+  handleJoinRoom(
+    @MessageBody() room: string,
+    @ConnectedSocket() client: Socket,
+  ) {
     console.log(`User ${client.id} joined room ${room}`);
     client.join(room);
 

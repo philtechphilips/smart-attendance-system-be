@@ -50,7 +50,7 @@ export class DashboardService {
       .groupBy('DATE(attendance.timestamp)')
       .orderBy('DATE(attendance.timestamp)', 'ASC')
       .getRawMany();
-  
+
     const departmentWiseAttendance = await this.attendanceRepository
       .createQueryBuilder('attendance')
       .leftJoin('attendance.course', 'course')
@@ -61,7 +61,7 @@ export class DashboardService {
       .groupBy('department.id')
       .addGroupBy('department.name')
       .getRawMany();
-  
+
     const topLowAttendanceStudents = await this.studentRepository
       .createQueryBuilder('student')
       .leftJoin('student.attendances', 'attendance')
@@ -76,14 +76,13 @@ export class DashboardService {
       .orderBy('attendanceCount', 'DESC')
       .limit(10)
       .getRawMany();
-  
+
     return {
       overallAttendanceTrends,
       departmentWiseAttendance,
-      topLowAttendanceStudents, 
+      topLowAttendanceStudents,
     };
   }
-  
 
   async studentDepartmentPerformance() {
     // ✅ Top-performing departments by attendance count
@@ -99,7 +98,7 @@ export class DashboardService {
       .orderBy('attendanceCount', 'DESC')
       .limit(5)
       .getRawMany();
-  
+
     // ✅ Students with attendance rate below 75%
     const studentsWithCriticalIssues = await this.studentRepository
       .createQueryBuilder('student')
@@ -109,19 +108,22 @@ export class DashboardService {
       .addSelect('student.lastname', 'lastname')
       .addSelect(
         "AVG(CASE WHEN attendance.status = 'present' THEN 1 ELSE 0 END)",
-        'averageAttendance'
+        'averageAttendance',
       )
       .groupBy('student.id')
       .addGroupBy('student.firstname')
       .addGroupBy('student.lastname')
-      .having('AVG(CASE WHEN attendance.status = \'present\' THEN 1 ELSE 0 END) < :threshold', {
-        threshold: 0.75,
-      })
+      .having(
+        "AVG(CASE WHEN attendance.status = 'present' THEN 1 ELSE 0 END) < :threshold",
+        {
+          threshold: 0.75,
+        },
+      )
       .getRawMany();
-  
+
     return {
       topPerformingDepartments,
       studentsWithCriticalIssues,
     };
-  }  
+  }
 }

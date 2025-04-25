@@ -22,7 +22,6 @@ export class CreateAttendanceDto {
   status?: 'present' | 'absent' | 'late';
 }
 
-
 export class MarkAttendanceDto {
   @ApiProperty({
     description: 'The ID of the student',
