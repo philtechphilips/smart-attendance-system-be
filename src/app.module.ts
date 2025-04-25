@@ -24,6 +24,7 @@ import { ProgramsModule } from './programs/programs.module';
 import * as admin from 'firebase-admin';
 import { SchedulingModule } from './shared/schedule/schedule.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { SignalingGateway } from './signaling/signaling.gateway';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    SignalingGateway,
   ],
 })
 export class AppModule implements OnApplicationBootstrap {
