@@ -1,4 +1,4 @@
-import { Controller, Get, Req } from '@nestjs/common';
+import { Controller, Get, Query, Req } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
@@ -24,8 +24,8 @@ export class DashboardController {
   }
 
   @Get('staff-dashboard')
-  async getLecturerDashboardData(@Req() req) {
+  async getLecturerDashboardData(@Req() req, @Query('period') period: string) {
     const user = req.user;
-    return this.dashboardService.staffDashboard(user.id);
+    return this.dashboardService.staffDashboard(user.id, period);
   }
 }

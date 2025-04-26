@@ -3,6 +3,8 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import * as ExcelJS from 'exceljs';
+import { Response } from 'express'; 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Course } from './entities/course.entity';
@@ -157,79 +159,124 @@ export class CoursesService {
    * Get attendance records by course
    * @param courseId - UUID of the course
    */
-  async getAttendanceByCourse(courseId: string) {
-    // Step 1: Ensure the course exists
+
+  async getAttendanceByCourse(
+    courseId: string,
+    search?: string,
+    startDate?: string,
+    endDate?: string,
+  ) {
     const course = await this.courseRepository.findOne({
       where: { id: courseId },
-      relations: ['class'], // Assuming course has a classLevel relation
+      relations: ['class'],
     });
+  
     if (!course) {
       throw new NotFoundException(`Course with ID ${courseId} not found`);
     }
-
-    // Step 2: Count unique days the course was held
-    const uniqueDays = await this.attendanceRepository
+  
+    const query = this.attendanceRepository
       .createQueryBuilder('attendance')
       .leftJoinAndSelect('attendance.course', 'course')
-      .where('course.id = :courseId', { courseId })
-      .select('DISTINCT DATE(attendance.timestamp)', 'uniqueDay') // Use DISTINCT
-      .getRawMany();
-
-    // Step 3: Count total students at the same level as the course class
-    const totalStudents = await this.attendanceRepository
-      .createQueryBuilder('att')
-      .leftJoinAndSelect('att.course', 'course')
-      .where('course.id = :courseId', { courseId })
-      .leftJoinAndSelect('att.student', 'students')
-      .leftJoinAndSelect('students.level', 'level')
-      .andWhere('level.id = :classId', { classId: course?.class?.id })
-      .getCount();
-
-    // Step 4: Count total marked present and absent
-    const totalPresent = await this.attendanceRepository
-      .createQueryBuilder('att')
-      .leftJoinAndSelect('att.course', 'course')
-      .where('course.id = :courseId', { courseId })
-      .andWhere('att.status = :status', { status: 'present' })
-      .getCount();
-
-    const totalAbsent = await this.attendanceRepository
-      .createQueryBuilder('att')
-      .leftJoinAndSelect('att.course', 'course')
-      .where('course.id = :courseId', { courseId })
-      .andWhere('att.status = :status', { status: 'absent' })
-      .getCount();
-
-    // Step 5: Prepare graph data for present and absent counts per day
-    const graphData = await this.attendanceRepository
-      .createQueryBuilder('attendance')
-      .select('DATE(attendance.timestamp)', 'date')
-      .addSelect(
-        `SUM(CASE WHEN attendance.status = 'present' THEN 1 ELSE 0 END)`,
-        'presentCount',
-      )
-      .addSelect(
-        `SUM(CASE WHEN attendance.status = 'absent' THEN 1 ELSE 0 END)`,
-        'absentCount',
-      )
-      .leftJoinAndSelect('attendance.course', 'course')
-      .where('course.id = :courseId', { courseId })
-      .groupBy('DATE(attendance.timestamp)')
-      .getRawMany();
-
-    // Step 6: Return aggregated data
+      .leftJoinAndSelect('attendance.semester', 'semester')
+      .leftJoinAndSelect('attendance.student', 'student')
+      .leftJoinAndSelect('student.level', 'level')
+      .leftJoinAndSelect('student.department', 'department')
+      .where('course.id = :courseId', { courseId });
+  
+    if (search) {
+      query.andWhere(
+        '(student.firstName LIKE :search OR student.lastName LIKE :search OR student.matricNo LIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+  
+    if (startDate) {
+      query.andWhere('attendance.timestamp >= :startDate', { startDate });
+    }
+  
+    if (endDate) {
+      query.andWhere('attendance.timestamp <= :endDate', { endDate });
+    }
+  
+    const attendance = await query.getMany();
+  
     return {
-      courseId,
-      courseName: course.name, // Assuming course has a "name" field
-      daysClassHeld: uniqueDays.length,
-      totalStudents,
-      totalPresent,
-      totalAbsent,
-      graphData, // Array of { date, presentCount, absentCount }
+      courseName: course.name,
+      attendance,
     };
   }
 
-  async getLecturerCourses(id: string) {
+  async downloadAttendanceByCourse(
+    courseId: string,
+    res?: Response, 
+  ) {
+    const course = await this.courseRepository.findOne({
+      where: { id: courseId },
+      relations: ['class'],
+    });
+  
+    if (!course) {
+      throw new NotFoundException(`Course with ID ${courseId} not found`);
+    }
+  
+    const query = this.attendanceRepository
+      .createQueryBuilder('attendance')
+      .leftJoinAndSelect('attendance.course', 'course')
+      .leftJoinAndSelect('attendance.semester', 'semester')
+      .leftJoinAndSelect('attendance.student', 'student')
+      .leftJoinAndSelect('student.level', 'level')
+      .leftJoinAndSelect('student.department', 'department')
+      .where('course.id = :courseId', { courseId });
+  
+    const attendance = await query.getMany();
+  
+    if (res) {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Attendance');
+  
+      // Define the header row
+      worksheet.columns = [
+        { header: 'First Name', key: 'firstName', width: 20 },
+        { header: 'Last Name', key: 'lastName', width: 20 },
+        { header: 'Matric No', key: 'matricNo', width: 20 },
+        { header: 'Level', key: 'level', width: 10 },
+        { header: 'Department', key: 'department', width: 20 },
+        { header: 'Date', key: 'timestamp', width: 20 },
+      ];
+  
+      // Fill the data
+      attendance.forEach((att) => {
+        worksheet.addRow({
+          firstName: att.student?.firstname || '',
+          lastName: att.student?.lastname || '',
+          matricNo: att.student?.matricNo || '',
+          level: att.student?.level?.name || '',
+          department: att.student?.department?.name || '',
+          timestamp: att.timestamp ? new Date(att.timestamp).toLocaleString() : '',
+        });
+      });
+  
+      // Set the response headers
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename=Attendance-${course.name}.xlsx`,
+      );
+  
+      // Stream the Excel file to the response
+      await workbook.xlsx.write(res);
+      res.end();
+      return;
+    }
+  }
+
+
+  async getLecturerCourses(id: string, search?: string) {
+    // Step 1: Ensure the lecturer exists
     const lecturer = await this.lecturerRepository.findOne({
       where: {
         user: {
@@ -237,19 +284,31 @@ export class CoursesService {
         },
       },
     });
-
-    // Step 1: Ensure the course exists
-    const course = await this.courseRepository.find({
-      where: {
-        lecturer: {
-          id: lecturer.id,
-        },
-      },
-      relations: ['class'], // Assuming course has a classLevel relation
-    });
-
+  
+    if (!lecturer) {
+      throw new Error('Lecturer not found');
+    }
+  
+    // Step 2: Build the query
+    const query = this.courseRepository.createQueryBuilder('course')
+      .leftJoinAndSelect('course.class', 'class')
+      .leftJoinAndSelect('course.department', 'department')
+      .leftJoinAndSelect('course.program', 'program')
+      .where('course.lecturerId = :lecturerId', { lecturerId: lecturer.id });
+  
+    // Step 3: Apply search if provided
+    if (search) {
+      query.andWhere(
+        `(course.name LIKE :search OR course.code LIKE :search OR department.name LIKE :search OR program.name LIKE :search)`,
+        { search: `%${search}%` },
+      );
+    }
+  
+    const course = await query.getMany();
+  
     return { course };
   }
+  
 
   async findOne(id: string): Promise<Course> {
     const course = await this.courseRepository.findOne({

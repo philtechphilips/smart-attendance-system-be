@@ -11,8 +11,8 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  surname: string;
+  @Column({ nullable: true })
+  middlename: string;
 
   @Column()
   firstname: string;

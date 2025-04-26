@@ -5,6 +5,7 @@ import { Student } from 'src/students/entities/student.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { Course } from 'src/courses/entities/course.entity';
 import { Attendance } from 'src/attendances/entities/attendance.entity';
+import { User } from 'src/auth/entities/auth.entity';
 
 @Injectable()
 export class DashboardService {
@@ -17,6 +18,8 @@ export class DashboardService {
     private readonly courseRepository: Repository<Course>,
     @InjectRepository(Attendance)
     private readonly attendanceRepository: Repository<Attendance>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   async dashboardData() {
@@ -127,39 +130,36 @@ export class DashboardService {
     };
   }
 
-  async staffDashboard(userId: string) {
+  async staffDashboard(userId: string, period: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
     // Fetch the staff member using the userId
     const staff = await this.lecturerRepository.findOne({
-      where: { user: { id: userId } },
-      relations: ['courses'], // Assuming 'courses' is a relation in the Staff entity
+      where: { user: { id: user.id } },
     });
 
-    if (!staff) {
-      throw new Error('Staff not found');
-    }
-
-    const courses = await this.courseRepository.find({
-      where: { lecturer: { id: staff?.id } }
-    });
-
-    // // Fetch courses assigned to the lecturer
-    // const courses = staff.courses;
+    const courses = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoinAndSelect('course.class', 'classes')
+      .leftJoin('course.lecturer', 'lecturer')
+      .where('lecturer.id = :lecturerId', { lecturerId: staff.id })
+      .getMany();
 
     // Count the number of courses
     const courseCount = courses.length;
 
-    // Initialize variables for student count and attendance count
     let totalStudents = 0;
     let totalAttendanceRecords = 0;
     const studentList = [];
 
-    // Loop through each course to get student counts and attendance
     for (const course of courses) {
-      // Count students in the course
       const studentsInCourse = await this.studentRepository
         .createQueryBuilder('student')
-        .leftJoin('student.level', 'level') // Assuming students are linked to levels
-        .where('level.id = :levelId', { levelId: course.class.id }) // Assuming class is a relation in Course
+        .leftJoinAndSelect('student.level', 'level')
+        .leftJoinAndSelect('student.department', 'department')
+        .where('level.id = :levelId', { levelId: course.class.id })
         .getMany();
 
       totalStudents += studentsInCourse.length;
@@ -174,11 +174,112 @@ export class DashboardService {
       studentList.push(...studentsInCourse.slice(0, 15));
     }
 
+    // Fetch attendance data based on the specified period
+    let attendanceData;
+
+    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthLabels = Array.from({ length: 12 }, (_, i) => `${i + 1}`); // '1' to '12'
+
+    if (period === 'week') {
+      const rawData = await this.attendanceRepository
+        .createQueryBuilder('attendance')
+        .leftJoin('attendance.course', 'course')
+        .leftJoin('course.lecturer', 'lecturer')
+        .select(
+          `
+          DAYOFWEEK(attendance.timestamp) as dayOfWeek,
+          attendance.status as status,
+          COUNT(*) as count
+        `,
+        )
+        .where('attendance.timestamp >= CURDATE() - INTERVAL 7 DAY')
+        .andWhere('lecturer.id = :lecturerId', { lecturerId: staff.id })
+        .groupBy('dayOfWeek, status')
+        .getRawMany();
+
+      attendanceData = weekDays.map((label, index) => {
+        const dayIndex = index + 1; // MySQL DAYOFWEEK starts from 1 (Sunday)
+        const present =
+          rawData.find((r) => r.dayOfWeek == dayIndex && r.status === 'present')
+            ?.count || 0;
+        const absent =
+          rawData.find((r) => r.dayOfWeek == dayIndex && r.status === 'absent')
+            ?.count || 0;
+        return { label, present, absent };
+      });
+    } else if (period === 'month') {
+      const rawData = await this.attendanceRepository
+        .createQueryBuilder('attendance')
+        .leftJoin('attendance.course', 'course')
+        .leftJoin('course.lecturer', 'lecturer')
+        .select(
+          `
+          DAY(attendance.timestamp) as day,
+          attendance.status as status,
+          COUNT(*) as count
+        `,
+        )
+        .where('attendance.timestamp >= CURDATE() - INTERVAL 1 MONTH')
+        .andWhere('lecturer.id = :lecturerId', { lecturerId: staff.id })
+        .groupBy('day, status')
+        .getRawMany();
+
+      const today = new Date();
+      const daysInMonth = new Date(
+        today.getFullYear(),
+        today.getMonth() + 1,
+        0,
+      ).getDate();
+
+      attendanceData = Array.from({ length: daysInMonth }, (_, i) => {
+        const day = i + 1;
+        const present =
+          rawData.find((r) => r.day == day && r.status === 'present')?.count ||
+          0;
+        const absent =
+          rawData.find((r) => r.day == day && r.status === 'absent')?.count ||
+          0;
+        return { label: `${day}`, present, absent };
+      });
+    } else if (period === 'year') {
+      const currentYear = new Date().getFullYear();
+
+      const rawData = await this.attendanceRepository
+        .createQueryBuilder('attendance')
+        .leftJoin('attendance.course', 'course')
+        .leftJoin('course.lecturer', 'lecturer')
+        .select(
+          `
+          MONTH(attendance.timestamp) as month,
+          attendance.status as status,
+          COUNT(*) as count
+        `,
+        )
+        .where('YEAR(attendance.timestamp) = :currentYear', { currentYear })
+        .andWhere('lecturer.id = :lecturerId', { lecturerId: staff.id })
+        .groupBy('month, status')
+        .getRawMany();
+
+      attendanceData = monthLabels.map((label, index) => {
+        const month = index + 1;
+        const present =
+          rawData.find((r) => r.month == month && r.status === 'present')
+            ?.count || 0;
+        const absent =
+          rawData.find((r) => r.month == month && r.status === 'absent')
+            ?.count || 0;
+        return { label, present, absent };
+      });
+    } else {
+      throw new Error('Invalid period specified');
+    }
+
     return {
       courseCount,
       totalStudents,
       totalAttendanceRecords,
-      studentList: studentList.slice(0, 15), // Limit to first 15 students
+      studentList,
+      attendanceData,
     };
   }
 }

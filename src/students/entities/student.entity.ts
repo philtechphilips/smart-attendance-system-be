@@ -60,16 +60,16 @@ export class Student {
   @Column()
   guardianAddress: string;
 
-  @Column()
+  @Column({ nullable: true })
   imageId: string;
 
   @Column({ type: 'longblob', nullable: true })
   image: Buffer;
 
-  @Column()
+  @Column({ nullable: true })
   imageUrl: string;
 
-  @Column()
+  @Column({ nullable: true })
   guardianEmail: string;
 
   @Column()

@@ -8,6 +8,7 @@ export interface IDateQuery {
 export interface IPaginationQuery {
   currentPage?: number;
   pageSize?: number;
+  search?: string;
 }
 
 export interface IPagination<T> {

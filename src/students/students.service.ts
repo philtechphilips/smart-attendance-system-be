@@ -18,12 +18,7 @@ import { applyPagination } from 'src/repository/base.repository';
 import { IPaginationQuery } from 'src/shared/interfaces/date-query';
 import { Department } from 'src/departments/entities/department.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
-import * as path from 'path';
-import { extname } from 'path';
-import axios from 'axios';
-import * as FormData from 'form-data';
-import * as fs from 'fs';
-import { tmpdir } from 'os';
+import { Course } from 'src/courses/entities/course.entity';
 
 @Injectable()
 export class StudentsService {
@@ -40,6 +35,8 @@ export class StudentsService {
     private readonly schoolRepository: Repository<School>,
     @InjectRepository(Staff)
     private readonly staffRepository: Repository<Staff>,
+    @InjectRepository(Course)
+    private readonly courseRepository: Repository<Course>,
     private readonly authService: AuthService,
   ) {}
 
@@ -232,6 +229,72 @@ export class StudentsService {
           total: totalstudents,
           currentPage: pagination.currentPage,
         },
+      };
+    } catch (error) {
+      console.log(error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to fetch students');
+    }
+  }
+
+  async getAllLecturerStudents(pagination: IPaginationQuery, user: User) {
+    const { search } = pagination;
+    try {
+      const staff = await this.staffRepository.findOne({
+        where: { user: { id: user.id } },
+        relations: ['user', 'department'],
+      });
+
+      if (!staff) {
+        throw new NotFoundException('Error finding your department!');
+      }
+
+      const courses = await this.courseRepository
+        .createQueryBuilder('course')
+        .leftJoinAndSelect('course.class', 'classes')
+        .leftJoin('course.lecturer', 'lecturer')
+        .where('lecturer.id = :lecturerId', { lecturerId: staff.id })
+        .getMany();
+
+      let totalStudents = 0;
+      let totalAttendanceRecords = 0;
+      const studentList = [];
+
+      for (const course of courses) {
+        const query = this.studentRepository
+          .createQueryBuilder('student')
+          .leftJoinAndSelect('student.level', 'level')
+          .leftJoinAndSelect('student.department', 'department')
+          .leftJoinAndSelect('student.school', 'school')
+          .leftJoinAndSelect('student.program', 'program')
+          .where('level.id = :levelId', { levelId: course.class.id });
+
+        if (search) {
+          query.andWhere(
+            `(student.firstname LIKE :search OR student.lastname LIKE :search OR student.middlename LIKE :search  OR student.matricNo LIKE :search)`,
+            { search: `%${search}%` },
+          );
+        }
+
+        const studentsInCourse = await query.getMany();
+
+        totalStudents += studentsInCourse.length;
+
+        studentList.push(...studentsInCourse);
+      }
+
+      // Pagination
+      const { currentPage = 1, pageSize = 10 } = pagination;
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedStudents = studentList.slice(startIndex, endIndex);
+
+      return {
+        total: studentList.length, // Return filtered total, not all students
+        totalAttendanceRecords,
+        students: paginatedStudents,
       };
     } catch (error) {
       console.log(error);

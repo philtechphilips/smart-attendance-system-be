@@ -18,6 +18,11 @@ export class RegisterAuthDto {
   @Length(1, 255)
   firstname: string;
 
+  @IsString()
+  @Optional()
+  @Length(1, 255)
+  middlename?: string;
+
   @IsEmail()
   @IsNotEmpty()
   email: string;

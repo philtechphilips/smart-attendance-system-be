@@ -53,6 +53,17 @@ export class StudentsController {
     return this.studentsService.getDepartmentStudent(pagination, user);
   }
 
+  
+  @Get('/lecturer-students')
+  @Roles(Role.HOD, Role.LECTURER)
+  getAllLecturerStudents(
+    @Query(CustomValidationPipe) pagination: PaginationDto,
+    @Req() req,
+  ) {
+    const user = req.user;
+    return this.studentsService.getAllLecturerStudents(pagination, user);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.studentsService.findOne(id);

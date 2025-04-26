@@ -8,6 +8,7 @@ import { Course } from 'src/courses/entities/course.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
 import { Level } from 'src/levels/entities/level.entity';
 import { Semester } from 'src/semesters/entities/semester.entity';
+import { User } from 'src/auth/entities/auth.entity';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { Semester } from 'src/semesters/entities/semester.entity';
       Staff,
       Level,
       Semester,
+      User,
     ]),
   ],
   controllers: [DashboardController],

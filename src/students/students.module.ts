@@ -19,6 +19,7 @@ import { Department } from 'src/departments/entities/department.entity';
 import { School } from 'src/schools/entities/school.entity';
 import { Program } from 'src/programs/entities/program.entity';
 import { Staff } from 'src/staffs/entities/staff.entity';
+import { Course } from 'src/courses/entities/course.entity';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { Staff } from 'src/staffs/entities/staff.entity';
       School,
       Program,
       Staff,
+      Course
     ]),
     ConfigModule.forRoot(),
     JwtModule.registerAsync({

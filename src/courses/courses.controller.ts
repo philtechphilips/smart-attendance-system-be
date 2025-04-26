@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   Req,
+  Res,
 } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -45,17 +46,33 @@ export class CoursesController {
   }
 
   @Get('/course-attendance/:id')
-  @Roles(Role.HOD)
-  getCoursesAttendance(@Param('id') id: string, @Req() req) {
-    const user = req.user;
-    return this.coursesService.getAttendanceByCourse(id);
+  @Roles(Role.HOD, Role.LECTURER)
+  getCoursesAttendance(
+    @Param('id') id: string,
+    @Query('search') search: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Req() req,
+  ) {
+    return this.coursesService.getAttendanceByCourse(id, search, startDate, endDate);
   }
 
-  @Get('/lecturer/:id')
-  @Roles(Role.LECTURER)
-  getCoursesForLecturer(@Param('id') id: string, @Req() req) {
+  @Get('/course-attendance/:id/download')
+  @Roles(Role.HOD, Role.LECTURER)
+  downloadCoursesAttendance(
+    @Param('id') id: string,
+    @Req() req,
+    @Res() res,
+  ) {
     const user = req.user;
-    return this.coursesService.getLecturerCourses(id);
+    return this.coursesService.downloadAttendanceByCourse(id, res);
+  }
+
+  @Get('/lecturer')
+  @Roles(Role.LECTURER)
+  getCoursesForLecturer(@Req() req, @Query('search') search: string) {
+    const user = req.user;
+    return this.coursesService.getLecturerCourses(user.id, search);
   }
 
   @Get(':id')
