@@ -282,4 +282,44 @@ export class DashboardService {
       attendanceData,
     };
   }
+
+  async studentDashboard(userId: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    // Fetch the staff member using the userId
+    const student = await this.studentRepository.findOne({
+      where: { user: { id: user.id } },
+      relations: ['level', 'department'],
+    });
+
+    const courses = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoinAndSelect('course.class', 'classes')
+      .leftJoin('course.lecturer', 'lecturer')
+      .leftJoin('course.department', 'department')
+      .where('course.class.id = :levelId', {
+        levelId: student.level.id,
+      })
+      .getMany();
+
+    // Count the number of courses
+    const courseCount = courses.length;
+
+    // Fetch attendance records for the student with proper relations
+    const attendances = await this.attendanceRepository
+      .createQueryBuilder('attendance')
+      .leftJoinAndSelect('attendance.course', 'course')
+      .leftJoinAndSelect('course.lecturer', 'lecturer')
+      .leftJoinAndSelect('attendance.student', 'student')
+      .leftJoinAndSelect('student.level', 'class')
+      .where('student.id = :studentId', { studentId: student.id })
+      .getMany();
+
+    return {
+      courseCount,
+      attendances,
+    };
+  }
 }

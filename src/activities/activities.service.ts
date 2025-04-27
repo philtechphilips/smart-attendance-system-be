@@ -15,7 +15,7 @@ export class ActivitiesService {
   ) {}
 
   async create(
-    createActivityDto: CreateActivityDto,
+    action: string,
     userId: string,
   ): Promise<Activity> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
@@ -24,7 +24,7 @@ export class ActivitiesService {
     }
 
     const activity = this.activityRepository.create({
-      ...createActivityDto,
+      action,
       user,
     });
 

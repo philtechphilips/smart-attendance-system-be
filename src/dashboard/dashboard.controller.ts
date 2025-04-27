@@ -28,4 +28,10 @@ export class DashboardController {
     const user = req.user;
     return this.dashboardService.staffDashboard(user.id, period);
   }
+
+  @Get('student-dashboard')
+  async studentDashboard(@Req() req) {
+    const user = req.user;
+    return this.dashboardService.studentDashboard(user.id);
+  }
 }

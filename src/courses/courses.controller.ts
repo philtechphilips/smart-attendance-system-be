@@ -45,6 +45,16 @@ export class CoursesController {
     return this.coursesService.getDepartmentCourses(pagination, user);
   }
 
+  @Get('/student-courses')
+  @Roles(Role.STUDENT)
+  getStudentCourses(
+    @Query(CustomValidationPipe) pagination: PaginationDto,
+    @Req() req,
+  ) {
+    const user = req.user;
+    return this.coursesService.getStudentCourses(pagination, user);
+  }
+
   @Get('/course-attendance/:id')
   @Roles(Role.HOD, Role.LECTURER)
   getCoursesAttendance(
@@ -55,6 +65,19 @@ export class CoursesController {
     @Req() req,
   ) {
     return this.coursesService.getAttendanceByCourse(id, search, startDate, endDate);
+  }
+
+  @Get('/student-course-attendance/:id')
+  @Roles(Role.STUDENT)
+  getStudentCoursesAttendance(
+    @Param('id') id: string,
+    @Query('search') search: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Req() req,
+  ) {
+    const user = req.user;
+    return this.coursesService.getStudentCoursesAttendance(id, search, startDate, endDate, user.id);
   }
 
   @Get('/course-attendance/:id/download')

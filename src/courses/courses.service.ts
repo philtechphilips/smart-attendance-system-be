@@ -43,6 +43,9 @@ export class CoursesService {
 
     @InjectRepository(Staff)
     private readonly lecturerRepository: Repository<Staff>,
+
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
   ) {}
 
   async create(createCourseDto: CreateCourseDto): Promise<Course> {
@@ -155,6 +158,48 @@ export class CoursesService {
     }
   }
 
+  async getStudentCourses(pagination: IPaginationQuery, user: User) {
+    try {
+      const student = await this.studentRepository.findOne({
+        where: { user: { id: user.id } },
+        relations: ['user', 'department'],
+      });
+
+      if (!student) {
+        throw new NotFoundException('Error finding your department!');
+      }
+
+      const queryBuilder =
+        await this.courseRepository.createQueryBuilder('courses');
+      queryBuilder
+        .leftJoinAndSelect('courses.class', 'level')
+        .leftJoinAndSelect('courses.department', 'department')
+        .leftJoinAndSelect('courses.program', 'program')
+        .leftJoinAndSelect('courses.lecturer', 'lecturer')
+        .where('department.id = :departmentId', {
+          departmentId: student.department.id,
+        });
+
+      const totalstudents = await queryBuilder.getCount();
+      const paginatedQuery = await applyPagination(queryBuilder, pagination);
+
+      const students = await paginatedQuery.getMany();
+
+      return {
+        items: students,
+        pagination: {
+          total: totalstudents,
+          currentPage: pagination.currentPage,
+        },
+      };
+    } catch (error) {
+      console.log(error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to fetch students');
+    }
+  }
   /**
    * Get attendance records by course
    * @param courseId - UUID of the course
@@ -183,6 +228,62 @@ export class CoursesService {
       .leftJoinAndSelect('student.level', 'level')
       .leftJoinAndSelect('student.department', 'department')
       .where('course.id = :courseId', { courseId });
+  
+    if (search) {
+      query.andWhere(
+        '(student.firstName LIKE :search OR student.lastName LIKE :search OR student.matricNo LIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+  
+    if (startDate) {
+      query.andWhere('attendance.timestamp >= :startDate', { startDate });
+    }
+  
+    if (endDate) {
+      query.andWhere('attendance.timestamp <= :endDate', { endDate });
+    }
+  
+    const attendance = await query.getMany();
+  
+    return {
+      courseName: course.name,
+      attendance,
+    };
+  }
+
+  async getStudentCoursesAttendance(
+    courseId: string,
+    search?: string,
+    startDate?: string,
+    endDate?: string,
+    userId?: string,
+  ) {
+
+    const student = await this.studentRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ['user', 'department'],
+    });
+
+
+    const course = await this.courseRepository.findOne({
+      where: { id: courseId },
+      relations: ['class'],
+    });
+  
+    if (!course) {
+      throw new NotFoundException(`Course with ID ${courseId} not found`);
+    }
+  
+    const query = this.attendanceRepository
+      .createQueryBuilder('attendance')
+      .leftJoinAndSelect('attendance.course', 'course')
+      .leftJoinAndSelect('attendance.semester', 'semester')
+      .leftJoinAndSelect('attendance.student', 'student')
+      .leftJoinAndSelect('student.level', 'level')
+      .leftJoinAndSelect('student.department', 'department')
+      .where('course.id = :courseId', { courseId })
+      .andWhere('student.id = :studentId', { studentId: student.id });
   
     if (search) {
       query.andWhere(
