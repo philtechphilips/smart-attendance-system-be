@@ -24,6 +24,7 @@ import * as admin from 'firebase-admin';
 import { SchedulingModule } from './shared/schedule/schedule.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SignalingGateway } from './signaling/signaling.gateway';
+import { ActivitiesModule } from './activities/activities.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { SignalingGateway } from './signaling/signaling.gateway';
     SchedulingModule,
     ProgramsModule,
     DashboardModule,
+    ActivitiesModule,
   ],
   controllers: [AppController],
   providers: [

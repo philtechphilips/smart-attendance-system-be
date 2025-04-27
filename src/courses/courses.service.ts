@@ -276,6 +276,8 @@ export class CoursesService {
 
 
   async getLecturerCourses(id: string, search?: string) {
+
+    console.log(id)
     // Step 1: Ensure the lecturer exists
     const lecturer = await this.lecturerRepository.findOne({
       where: {
@@ -284,6 +286,8 @@ export class CoursesService {
         },
       },
     });
+
+    console.log(lecturer, 'lecturer')
   
     if (!lecturer) {
       throw new Error('Lecturer not found');
@@ -295,14 +299,6 @@ export class CoursesService {
       .leftJoinAndSelect('course.department', 'department')
       .leftJoinAndSelect('course.program', 'program')
       .where('course.lecturerId = :lecturerId', { lecturerId: lecturer.id });
-  
-    // Step 3: Apply search if provided
-    if (search) {
-      query.andWhere(
-        `(course.name LIKE :search OR course.code LIKE :search OR department.name LIKE :search OR program.name LIKE :search)`,
-        { search: `%${search}%` },
-      );
-    }
   
     const course = await query.getMany();
   
