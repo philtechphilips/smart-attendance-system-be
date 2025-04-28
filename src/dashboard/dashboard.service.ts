@@ -283,6 +283,156 @@ export class DashboardService {
     };
   }
 
+  async adminDashboard(userId: string, period: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    // Fetch the staff member using the userId
+    const staff = await this.lecturerRepository.findOne({
+      where: { user: { id: user.id } },
+    });
+
+    const courses = await this.courseRepository
+      .createQueryBuilder('course')
+      .leftJoinAndSelect('course.class', 'classes')
+      .leftJoinAndSelect('course.department', 'department')
+      .leftJoinAndSelect('course.lecturer', 'lecturer')
+      .getMany();
+
+    // Count the number of courses
+    const courseCount = courses.length;
+
+    let totalStudents = 0;
+    let totalAttendanceRecords = 0;
+    const studentList = [];
+
+    for (const course of courses) {
+      const studentsInCourse = await this.studentRepository
+        .createQueryBuilder('student')
+        .leftJoinAndSelect('student.level', 'level')
+        .leftJoinAndSelect('student.department', 'department')
+        .getMany();
+
+      totalStudents += studentsInCourse.length;
+
+      // Count attendance records for the course
+      const attendanceCount = await this.attendanceRepository.count({
+        where: { course: { id: course.id } },
+      });
+      totalAttendanceRecords += attendanceCount;
+
+      // Add first 15 students to the list
+      studentList.push(...studentsInCourse.slice(0, 15));
+    }
+
+    // Fetch attendance data based on the specified period
+    let attendanceData;
+
+    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthLabels = Array.from({ length: 12 }, (_, i) => `${i + 1}`); // '1' to '12'
+
+    if (period === 'week') {
+      const rawData = await this.attendanceRepository
+        .createQueryBuilder('attendance')
+        .leftJoin('attendance.course', 'course')
+        .leftJoin('course.lecturer', 'lecturer')
+        .select(
+          `
+          DAYOFWEEK(attendance.timestamp) as dayOfWeek,
+          attendance.status as status,
+          COUNT(*) as count
+        `,
+        )
+        .where('attendance.timestamp >= CURDATE() - INTERVAL 7 DAY')
+        .groupBy('dayOfWeek, status')
+        .getRawMany();
+
+      attendanceData = weekDays.map((label, index) => {
+        const dayIndex = index + 1; // MySQL DAYOFWEEK starts from 1 (Sunday)
+        const present =
+          rawData.find((r) => r.dayOfWeek == dayIndex && r.status === 'present')
+            ?.count || 0;
+        const absent =
+          rawData.find((r) => r.dayOfWeek == dayIndex && r.status === 'absent')
+            ?.count || 0;
+        return { label, present, absent };
+      });
+    } else if (period === 'month') {
+      const rawData = await this.attendanceRepository
+        .createQueryBuilder('attendance')
+        .leftJoin('attendance.course', 'course')
+        .leftJoin('course.lecturer', 'lecturer')
+        .select(
+          `
+          DAY(attendance.timestamp) as day,
+          attendance.status as status,
+          COUNT(*) as count
+        `,
+        )
+        .where('attendance.timestamp >= CURDATE() - INTERVAL 1 MONTH')
+        .groupBy('day, status')
+        .getRawMany();
+
+      const today = new Date();
+      const daysInMonth = new Date(
+        today.getFullYear(),
+        today.getMonth() + 1,
+        0,
+      ).getDate();
+
+      attendanceData = Array.from({ length: daysInMonth }, (_, i) => {
+        const day = i + 1;
+        const present =
+          rawData.find((r) => r.day == day && r.status === 'present')?.count ||
+          0;
+        const absent =
+          rawData.find((r) => r.day == day && r.status === 'absent')?.count ||
+          0;
+        return { label: `${day}`, present, absent };
+      });
+    } else if (period === 'year') {
+      const currentYear = new Date().getFullYear();
+
+      const rawData = await this.attendanceRepository
+        .createQueryBuilder('attendance')
+        .leftJoin('attendance.course', 'course')
+        .leftJoin('course.lecturer', 'lecturer')
+        .select(
+          `
+          MONTH(attendance.timestamp) as month,
+          attendance.status as status,
+          COUNT(*) as count
+        `,
+        )
+        .where('YEAR(attendance.timestamp) = :currentYear', { currentYear })
+        .groupBy('month, status')
+        .getRawMany();
+
+      attendanceData = monthLabels.map((label, index) => {
+        const month = index + 1;
+        const present =
+          rawData.find((r) => r.month == month && r.status === 'present')
+            ?.count || 0;
+        const absent =
+          rawData.find((r) => r.month == month && r.status === 'absent')
+            ?.count || 0;
+        return { label, present, absent };
+      });
+    } else {
+      throw new Error('Invalid period specified');
+    }
+
+    return {
+      courseCount,
+      courses,
+      totalStudents,
+      totalAttendanceRecords,
+      studentList,
+      attendanceData,
+    };
+  }
+
   async studentDashboard(userId: string) {
     const user = await this.userRepository.findOne({
       where: { id: userId },

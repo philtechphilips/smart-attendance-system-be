@@ -115,7 +115,7 @@ export class CoursesService {
     };
   }
 
-  async getDepartmentCourses(pagination: IPaginationQuery, user: User) {
+  async getDepartmentCourses(pagination: IPaginationQuery, user: User,) {
     try {
       const getUserDept = await this.staffRepository.findOne({
         where: { user: { id: user.id } },

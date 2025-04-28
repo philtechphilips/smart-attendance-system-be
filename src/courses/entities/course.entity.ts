@@ -22,6 +22,9 @@ export class Course {
   @Column()
   code: string;
 
+  @Column({ nullable: true })
+  unit: number;
+
   @ManyToOne(() => Staff, (staff) => staff.id)
   lecturer: Staff;
 

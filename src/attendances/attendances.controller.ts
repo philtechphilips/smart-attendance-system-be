@@ -43,6 +43,7 @@ export class AttendancesController {
     @Req() req,
     @Query(CustomValidationPipe) pagination: PaginationDto,
     @Query(CustomValidationPipe) query?: AttendanceQueryDto,
+    @Query(CustomValidationPipe) search?: string,
   ) {
     const user = req.user;
     const ranges = DateFilter(query);
@@ -52,6 +53,7 @@ export class AttendancesController {
       user,
       query,
       ranges,
+      search
     );
   }
 

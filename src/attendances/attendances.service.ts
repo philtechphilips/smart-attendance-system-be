@@ -227,7 +227,9 @@ export class AttendancesService {
     user: User,
     query?: AttendanceQueryDto,
     period?: IDateQuery,
+    search?: string,
   ) {
+   const searchQuery = search?.search ?? null
     const getUserDept = await this.staffRepository.findOne({
       where: { user: { id: user.id } },
       relations: ['user', 'department'],
@@ -243,10 +245,14 @@ export class AttendancesService {
       .leftJoinAndSelect('student.department', 'department')
       .leftJoinAndSelect('student.level', 'level')
       .leftJoinAndSelect('attendance.course', 'course')
-      .leftJoinAndSelect('course.lecturer', 'lecturer')
-      .where('department.id = :departmentId', {
-        departmentId: getUserDept.department.id,
-      });
+      .leftJoinAndSelect('course.lecturer', 'lecturer');
+
+      if(searchQuery) {
+        attendanceRecords.andWhere(
+          '(student.firstname LIKE :search OR student.lastname LIKE :search OR student.matricNo LIKE :search)',
+          { search: `%${searchQuery}%` },
+        );
+      }
 
     if (query && query.status && query.status !== 'all') {
       attendanceRecords.andWhere('attendance.status = :status', {

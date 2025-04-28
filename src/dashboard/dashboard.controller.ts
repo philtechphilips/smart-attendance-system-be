@@ -29,6 +29,13 @@ export class DashboardController {
     return this.dashboardService.staffDashboard(user.id, period);
   }
 
+  @Get('admin-dashboard')
+  async getAdminDashboardData(@Req() req, @Query('period') period: string) {
+    const user = req.user;
+    return this.dashboardService.adminDashboard(user.id, period);
+  }
+
+
   @Get('student-dashboard')
   async studentDashboard(@Req() req) {
     const user = req.user;
