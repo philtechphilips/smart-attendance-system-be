@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateCourseDto {
   @ApiProperty({
@@ -25,7 +31,6 @@ export class CreateCourseDto {
   @IsOptional()
   @IsNumber()
   unit?: number;
-
 
   @ApiProperty({
     description: 'The UUID of the lecturer assigned to the course',

@@ -35,7 +35,6 @@ export class DashboardController {
     return this.dashboardService.adminDashboard(user.id, period);
   }
 
-
   @Get('student-dashboard')
   async studentDashboard(@Req() req) {
     const user = req.user;

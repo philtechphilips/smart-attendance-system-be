@@ -53,3 +53,17 @@ export class MarkAttendanceDto {
   })
   timestamp: Date;
 }
+
+export class CreateStreamDto {
+  @ApiProperty({
+    description: 'The ID of the room',
+    example: '12345',
+  })
+  roomId: string;
+
+  @ApiProperty({
+    description: 'The ID of the course',
+    example: 'CS101',
+  })
+  courseId: string;
+}

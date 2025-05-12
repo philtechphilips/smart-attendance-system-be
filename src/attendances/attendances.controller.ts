@@ -14,7 +14,10 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { AttendancesService } from './attendances.service';
-import { CreateAttendanceDto } from './dto/create-attendance.dto';
+import {
+  CreateAttendanceDto,
+  CreateStreamDto,
+} from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/auth/decorators/role.decorators';
@@ -53,10 +56,9 @@ export class AttendancesController {
       user,
       query,
       ranges,
-      search
+      search,
     );
   }
-
 
   @Get('/student-attendance/:id')
   getStudentAttendanceDetails(@Param('id') id: string, @Req() req) {
@@ -70,12 +72,6 @@ export class AttendancesController {
     return this.attendancesService.getAStudentAttendanceDetails(id);
   }
 
-  @Get('/:id')
-  @Roles(Role.HOD, Role.LECTURER)
-  getAttendanceById(@Param('id') id: string) {
-    return this.attendancesService.getAttendanceById(id);
-  }
-
   @Post('/capture')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
@@ -84,5 +80,21 @@ export class AttendancesController {
 
     const data = req.body;
     return this.attendancesService.mark(data);
+  }
+
+  @Post('/create-stream')
+  async createStream(@Body() createStreamDto: CreateStreamDto) {
+    return this.attendancesService.createStream(createStreamDto);
+  }
+
+  @Get('/streams')
+  async fetchStream() {
+    return this.attendancesService.getAllStreams();
+  }
+
+  @Get('/:id')
+  @Roles(Role.HOD, Role.LECTURER)
+  getAttendanceById(@Param('id') id: string) {
+    return this.attendancesService.getAttendanceById(id);
   }
 }

@@ -9,6 +9,7 @@ import { Between, Repository } from 'typeorm';
 import { Attendance } from './entities/attendance.entity';
 import {
   CreateAttendanceDto,
+  CreateStreamDto,
   MarkAttendanceDto,
 } from './dto/create-attendance.dto';
 import { Student } from 'src/students/entities/student.entity';
@@ -21,6 +22,7 @@ import { AttendanceQueryDto } from 'src/shared/dto/attendance.dto';
 import { AttendanceGateway } from 'src/shared/socket/attendance.socket';
 import { Level } from 'src/levels/entities/level.entity';
 import { Semester } from 'src/semesters/entities/semester.entity';
+import { Stream } from './entities/stream.entity';
 
 @Injectable()
 export class AttendancesService {
@@ -37,7 +39,8 @@ export class AttendancesService {
     private readonly staffRepository: Repository<Staff>,
     @InjectRepository(Semester)
     private readonly semesterRepository: Repository<Semester>,
-    private readonly attendanceGateway: AttendanceGateway,
+    @InjectRepository(Stream)
+    private readonly streamRepository: Repository<Stream>,
   ) {}
 
   /**
@@ -229,7 +232,7 @@ export class AttendancesService {
     period?: IDateQuery,
     search?: string,
   ) {
-   const searchQuery = search?.search ?? null
+    const searchQuery = search?.search ?? null;
     const getUserDept = await this.staffRepository.findOne({
       where: { user: { id: user.id } },
       relations: ['user', 'department'],
@@ -247,12 +250,12 @@ export class AttendancesService {
       .leftJoinAndSelect('attendance.course', 'course')
       .leftJoinAndSelect('course.lecturer', 'lecturer');
 
-      if(searchQuery) {
-        attendanceRecords.andWhere(
-          '(student.firstname LIKE :search OR student.lastname LIKE :search OR student.matricNo LIKE :search)',
-          { search: `%${searchQuery}%` },
-        );
-      }
+    if (searchQuery) {
+      attendanceRecords.andWhere(
+        '(student.firstname LIKE :search OR student.lastname LIKE :search OR student.matricNo LIKE :search)',
+        { search: `%${searchQuery}%` },
+      );
+    }
 
     if (query && query.status && query.status !== 'all') {
       attendanceRecords.andWhere('attendance.status = :status', {
@@ -308,7 +311,6 @@ export class AttendancesService {
       .leftJoinAndSelect('student.level', 'class')
       .where('student.id = :studentId', { studentId })
       .getMany();
-
 
     // Calculate total classes, present, and absent counts
     const totalClasses = attendanceRecords.length;
@@ -408,7 +410,7 @@ export class AttendancesService {
       .getMany();
 
     return {
-      attendances
+      attendances,
     };
   }
 
@@ -520,4 +522,57 @@ export class AttendancesService {
       `${absentRecords.length} students marked as absent for course ${courseId} on ${date}`,
     );
   }
+
+  async createStream(createStreamDto: CreateStreamDto) {
+    try {
+      const { roomId, courseId } = createStreamDto;
+
+      const course = await this.courseRepository.findOne({
+        where: { id: courseId },
+      });
+
+      if (!course) {
+        throw new Error('Course not found');
+      }
+
+      const stream = this.streamRepository.create({
+        roomId,
+        course,
+      });
+
+      return await this.streamRepository.save(stream);
+    } catch (error) {
+      throw new HttpException(error, 500);
+    }
+  }
+
+async getAllStreams() {
+  try {
+    // Fetch all courses
+    const courses = await this.courseRepository.query(
+      `SELECT * FROM courses`
+    );
+
+    // Fetch all streams
+    const streams = await this.streamRepository.query(
+      `SELECT * FROM streams`
+    );
+
+    // Match streams with their corresponding courses
+    const matchedStreams = streams.map(stream => {
+      const course = courses.find(course => course.id === stream.course_id);
+      return {
+        ...stream,  // Original stream data
+        course: course || null,  // Add matched course or null if not found
+      };
+    });
+
+    return matchedStreams;
+  } catch (error) {
+    console.log('Error fetching streams and courses:', error);
+    throw new HttpException(error.message || 'Failed to fetch streams', 500);
+  }
+}
+
+
 }

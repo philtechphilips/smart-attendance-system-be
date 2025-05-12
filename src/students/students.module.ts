@@ -31,7 +31,7 @@ import { Course } from 'src/courses/entities/course.entity';
       School,
       Program,
       Staff,
-      Course
+      Course,
     ]),
     ConfigModule.forRoot(),
     JwtModule.registerAsync({

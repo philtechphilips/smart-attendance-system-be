@@ -64,7 +64,12 @@ export class CoursesController {
     @Query('endDate') endDate: string,
     @Req() req,
   ) {
-    return this.coursesService.getAttendanceByCourse(id, search, startDate, endDate);
+    return this.coursesService.getAttendanceByCourse(
+      id,
+      search,
+      startDate,
+      endDate,
+    );
   }
 
   @Get('/student-course-attendance/:id')
@@ -77,16 +82,18 @@ export class CoursesController {
     @Req() req,
   ) {
     const user = req.user;
-    return this.coursesService.getStudentCoursesAttendance(id, search, startDate, endDate, user.id);
+    return this.coursesService.getStudentCoursesAttendance(
+      id,
+      search,
+      startDate,
+      endDate,
+      user.id,
+    );
   }
 
   @Get('/course-attendance/:id/download')
   @Roles(Role.HOD, Role.LECTURER)
-  downloadCoursesAttendance(
-    @Param('id') id: string,
-    @Req() req,
-    @Res() res,
-  ) {
+  downloadCoursesAttendance(@Param('id') id: string, @Req() req, @Res() res) {
     const user = req.user;
     return this.coursesService.downloadAttendanceByCourse(id, res);
   }

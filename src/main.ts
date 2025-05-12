@@ -29,7 +29,10 @@ async function bootstrap() {
   SwaggerModule.setup('/v1', app, document);
 
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://smart-attendance-system-two.vercel.app'],
+    origin: [
+      'http://localhost:3000',
+      'https://smart-attendance-system-two.vercel.app',
+    ],
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     credentials: false,
   });

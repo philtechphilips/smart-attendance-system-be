@@ -53,7 +53,6 @@ export class StudentsController {
     return this.studentsService.getDepartmentStudent(pagination, user);
   }
 
-  
   @Get('/lecturer-students')
   @Roles(Role.HOD, Role.LECTURER)
   getAllLecturerStudents(

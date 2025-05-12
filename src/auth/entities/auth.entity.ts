@@ -38,5 +38,5 @@ export class User {
   updatedAt: Date;
 
   @OneToMany(() => Activity, (activity) => activity.user)
-  activities: Activity[]; 
+  activities: Activity[];
 }

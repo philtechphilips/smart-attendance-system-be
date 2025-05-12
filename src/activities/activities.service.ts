@@ -14,10 +14,7 @@ export class ActivitiesService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async create(
-    action: string,
-    userId: string,
-  ): Promise<Activity> {
+  async create(action: string, userId: string): Promise<Activity> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new Error('User not found');

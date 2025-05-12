@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
-import { Response } from 'express'; 
+import { Response } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Course } from './entities/course.entity';
@@ -115,7 +115,7 @@ export class CoursesService {
     };
   }
 
-  async getDepartmentCourses(pagination: IPaginationQuery, user: User,) {
+  async getDepartmentCourses(pagination: IPaginationQuery, user: User) {
     try {
       const getUserDept = await this.staffRepository.findOne({
         where: { user: { id: user.id } },
@@ -215,11 +215,11 @@ export class CoursesService {
       where: { id: courseId },
       relations: ['class'],
     });
-  
+
     if (!course) {
       throw new NotFoundException(`Course with ID ${courseId} not found`);
     }
-  
+
     const query = this.attendanceRepository
       .createQueryBuilder('attendance')
       .leftJoinAndSelect('attendance.course', 'course')
@@ -228,24 +228,24 @@ export class CoursesService {
       .leftJoinAndSelect('student.level', 'level')
       .leftJoinAndSelect('student.department', 'department')
       .where('course.id = :courseId', { courseId });
-  
+
     if (search) {
       query.andWhere(
         '(student.firstName LIKE :search OR student.lastName LIKE :search OR student.matricNo LIKE :search)',
         { search: `%${search}%` },
       );
     }
-  
+
     if (startDate) {
       query.andWhere('attendance.timestamp >= :startDate', { startDate });
     }
-  
+
     if (endDate) {
       query.andWhere('attendance.timestamp <= :endDate', { endDate });
     }
-  
+
     const attendance = await query.getMany();
-  
+
     return {
       courseName: course.name,
       attendance,
@@ -259,22 +259,20 @@ export class CoursesService {
     endDate?: string,
     userId?: string,
   ) {
-
     const student = await this.studentRepository.findOne({
       where: { user: { id: userId } },
       relations: ['user', 'department'],
     });
 
-
     const course = await this.courseRepository.findOne({
       where: { id: courseId },
       relations: ['class'],
     });
-  
+
     if (!course) {
       throw new NotFoundException(`Course with ID ${courseId} not found`);
     }
-  
+
     const query = this.attendanceRepository
       .createQueryBuilder('attendance')
       .leftJoinAndSelect('attendance.course', 'course')
@@ -284,43 +282,40 @@ export class CoursesService {
       .leftJoinAndSelect('student.department', 'department')
       .where('course.id = :courseId', { courseId })
       .andWhere('student.id = :studentId', { studentId: student.id });
-  
+
     if (search) {
       query.andWhere(
         '(student.firstName LIKE :search OR student.lastName LIKE :search OR student.matricNo LIKE :search)',
         { search: `%${search}%` },
       );
     }
-  
+
     if (startDate) {
       query.andWhere('attendance.timestamp >= :startDate', { startDate });
     }
-  
+
     if (endDate) {
       query.andWhere('attendance.timestamp <= :endDate', { endDate });
     }
-  
+
     const attendance = await query.getMany();
-  
+
     return {
       courseName: course.name,
       attendance,
     };
   }
 
-  async downloadAttendanceByCourse(
-    courseId: string,
-    res?: Response, 
-  ) {
+  async downloadAttendanceByCourse(courseId: string, res?: Response) {
     const course = await this.courseRepository.findOne({
       where: { id: courseId },
       relations: ['class'],
     });
-  
+
     if (!course) {
       throw new NotFoundException(`Course with ID ${courseId} not found`);
     }
-  
+
     const query = this.attendanceRepository
       .createQueryBuilder('attendance')
       .leftJoinAndSelect('attendance.course', 'course')
@@ -329,13 +324,13 @@ export class CoursesService {
       .leftJoinAndSelect('student.level', 'level')
       .leftJoinAndSelect('student.department', 'department')
       .where('course.id = :courseId', { courseId });
-  
+
     const attendance = await query.getMany();
-  
+
     if (res) {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Attendance');
-  
+
       // Define the header row
       worksheet.columns = [
         { header: 'First Name', key: 'firstName', width: 20 },
@@ -345,7 +340,7 @@ export class CoursesService {
         { header: 'Department', key: 'department', width: 20 },
         { header: 'Date', key: 'timestamp', width: 20 },
       ];
-  
+
       // Fill the data
       attendance.forEach((att) => {
         worksheet.addRow({
@@ -354,10 +349,12 @@ export class CoursesService {
           matricNo: att.student?.matricNo || '',
           level: att.student?.level?.name || '',
           department: att.student?.department?.name || '',
-          timestamp: att.timestamp ? new Date(att.timestamp).toLocaleString() : '',
+          timestamp: att.timestamp
+            ? new Date(att.timestamp).toLocaleString()
+            : '',
         });
       });
-  
+
       // Set the response headers
       res.setHeader(
         'Content-Type',
@@ -367,7 +364,7 @@ export class CoursesService {
         'Content-Disposition',
         `attachment; filename=Attendance-${course.name}.xlsx`,
       );
-  
+
       // Stream the Excel file to the response
       await workbook.xlsx.write(res);
       res.end();
@@ -375,10 +372,8 @@ export class CoursesService {
     }
   }
 
-
   async getLecturerCourses(id: string, search?: string) {
-
-    console.log(id)
+    console.log(id);
     // Step 1: Ensure the lecturer exists
     const lecturer = await this.lecturerRepository.findOne({
       where: {
@@ -388,24 +383,24 @@ export class CoursesService {
       },
     });
 
-    console.log(lecturer, 'lecturer')
-  
+    console.log(lecturer, 'lecturer');
+
     if (!lecturer) {
       throw new Error('Lecturer not found');
     }
-  
+
     // Step 2: Build the query
-    const query = this.courseRepository.createQueryBuilder('course')
+    const query = this.courseRepository
+      .createQueryBuilder('course')
       .leftJoinAndSelect('course.class', 'class')
       .leftJoinAndSelect('course.department', 'department')
       .leftJoinAndSelect('course.program', 'program')
       .where('course.lecturerId = :lecturerId', { lecturerId: lecturer.id });
-  
+
     const course = await query.getMany();
-  
+
     return { course };
   }
-  
 
   async findOne(id: string): Promise<Course> {
     const course = await this.courseRepository.findOne({

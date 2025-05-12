@@ -14,6 +14,7 @@ import { Staff } from 'src/staffs/entities/staff.entity';
 import { AttendanceGateway } from '../socket/attendance.socket';
 import { Repository } from 'typeorm';
 import { Semester } from 'src/semesters/entities/semester.entity';
+import { Stream } from 'src/attendances/entities/stream.entity';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { Semester } from 'src/semesters/entities/semester.entity';
       Student,
       Staff,
       Semester,
+      Stream,
     ]),
   ],
 

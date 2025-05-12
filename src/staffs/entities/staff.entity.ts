@@ -57,7 +57,6 @@ export class Staff {
   @JoinTable() // This will create a join table for the many-to-many relationship
   courses: Course[];
 
-
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
