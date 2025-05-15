@@ -3,7 +3,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import * as ExcelJS from 'exceljs';
+import * as stringify from 'csv-stringify/sync';
 import { Response } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -306,71 +306,74 @@ export class CoursesService {
     };
   }
 
-  async downloadAttendanceByCourse(courseId: string, res?: Response) {
-    const course = await this.courseRepository.findOne({
-      where: { id: courseId },
-      relations: ['class'],
-    });
-
-    if (!course) {
-      throw new NotFoundException(`Course with ID ${courseId} not found`);
-    }
-
-    const query = this.attendanceRepository
-      .createQueryBuilder('attendance')
-      .leftJoinAndSelect('attendance.course', 'course')
-      .leftJoinAndSelect('attendance.semester', 'semester')
-      .leftJoinAndSelect('attendance.student', 'student')
-      .leftJoinAndSelect('student.level', 'level')
-      .leftJoinAndSelect('student.department', 'department')
-      .where('course.id = :courseId', { courseId });
-
-    const attendance = await query.getMany();
-
-    if (res) {
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Attendance');
-
-      // Define the header row
-      worksheet.columns = [
-        { header: 'First Name', key: 'firstName', width: 20 },
-        { header: 'Last Name', key: 'lastName', width: 20 },
-        { header: 'Matric No', key: 'matricNo', width: 20 },
-        { header: 'Level', key: 'level', width: 10 },
-        { header: 'Department', key: 'department', width: 20 },
-        { header: 'Date', key: 'timestamp', width: 20 },
-      ];
-
-      // Fill the data
-      attendance.forEach((att) => {
-        worksheet.addRow({
-          firstName: att.student?.firstname || '',
-          lastName: att.student?.lastname || '',
-          matricNo: att.student?.matricNo || '',
-          level: att.student?.level?.name || '',
-          department: att.student?.department?.name || '',
-          timestamp: att.timestamp
-            ? new Date(att.timestamp).toLocaleString()
-            : '',
+async downloadAttendanceByCourse(courseId: string, res?: Response) {
+    try {
+        const course = await this.courseRepository.findOne({
+            where: { id: courseId },
+            relations: ['class'],
         });
-      });
 
-      // Set the response headers
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      );
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=Attendance-${course.name}.xlsx`,
-      );
+        if (!course) {
+            throw new NotFoundException(`Course with ID ${courseId} not found`);
+        }
 
-      // Stream the Excel file to the response
-      await workbook.xlsx.write(res);
-      res.end();
-      return;
+        const attendance = await this.attendanceRepository
+            .createQueryBuilder('attendance')
+            .leftJoinAndSelect('attendance.course', 'course')
+            .leftJoinAndSelect('attendance.semester', 'semester')
+            .leftJoinAndSelect('attendance.student', 'student')
+            .leftJoinAndSelect('student.level', 'level')
+            .leftJoinAndSelect('student.department', 'department')
+            .where('course.id = :courseId', { courseId })
+            .getMany();
+
+        if (!res) {
+            return attendance;
+        }
+
+        // Prepare CSV headers
+        const headers = [
+            'First Name',
+            'Last Name',
+            'Matric No',
+            'Level',
+            'Department',
+            'Date',
+        ];
+
+        // Prepare CSV rows
+        const rows = attendance.map(att => [
+            att.student?.firstname || '',
+            att.student?.lastname || '',
+            att.student?.matricNo || '',
+            att.student?.level?.name || '',
+            att.student?.department?.name || '',
+            att.timestamp ? new Date(att.timestamp).toLocaleString() : '',
+        ]);
+
+        // Combine headers and rows
+        const csvData = stringify.stringify([headers, ...rows]);
+
+        // Set headers for CSV download
+        res.header('Content-Type', 'text/csv');
+        res.header(
+            'Content-Disposition',
+            `attachment; filename=Attendance-${course.name.replace(/[^a-z0-9]/gi, '_')}.csv`,
+        );
+
+        // Send CSV content
+        res.send(csvData);
+
+    } catch (error) {
+        if (res && !res.headersSent) {
+            res.status(500).json({
+                message: 'Failed to generate CSV file',
+                error: error.message,
+            });
+        }
+        throw new InternalServerErrorException('Failed to generate CSV file');
     }
-  }
+}
 
   async getLecturerCourses(id: string, search?: string) {
     console.log(id);

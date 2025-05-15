@@ -455,7 +455,6 @@ export class AttendancesService {
     });
 
     if (!course) {
-      console.log(`Course with ID ${courseId} not found.`);
       return;
     }
 
