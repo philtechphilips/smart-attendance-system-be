@@ -2,6 +2,7 @@ import {
   BadRequestException,
   HttpException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -573,5 +574,68 @@ async getAllStreams() {
   }
 }
 
+
+async markAttendanceManually(
+  studentId: string,
+  courseId: string,
+  status: 'present' | 'absent' | 'late' = 'present',
+): Promise<Attendance> {
+  try {
+    // Verify course exists
+    const course = await this.courseRepository.findOne({
+      where: { id: courseId }
+    });
+    if (!course) {
+      throw new NotFoundException(`Course not found`);
+    }
+
+    // Verify student exists
+    const student = await this.studentRepository.findOne({
+      where: { id: studentId },
+      relations: ['user']
+    });
+    if (!student) {
+      throw new NotFoundException(`Student not found`);
+    }
+
+        const semester = await this.semesterRepository.findOne({
+      where: { active: true },
+    });
+    
+    const timestamp = new Date();
+
+    const existingAttendance = await this.attendanceRepository.findOne({
+      where: {
+        course: { id: courseId },
+        student: { id: studentId },
+        semester,
+        timestamp: timestamp
+      }
+    });
+
+    if (existingAttendance) {
+      // Update existing attendance
+      existingAttendance.status = status;
+      return await this.attendanceRepository.save(existingAttendance);
+    }
+
+    // Create new attendance record
+    const attendance = this.attendanceRepository.create({
+      course,
+      student,
+      semester,
+      timestamp,
+      status,
+    });
+
+    return await this.attendanceRepository.save(attendance);
+  } catch (error) {
+    console.log(error)
+    if (error instanceof NotFoundException) {
+      throw error;
+    }
+    throw new InternalServerErrorException('Failed to mark attendance');
+  }
+}
 
 }

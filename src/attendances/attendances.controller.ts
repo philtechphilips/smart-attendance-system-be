@@ -97,4 +97,15 @@ export class AttendancesController {
   getAttendanceById(@Param('id') id: string) {
     return this.attendancesService.getAttendanceById(id);
   }
+
+  @Post('/manual-attendance')
+  async manualAttendance(@Req() req) {
+    const { courseId, status, studentId } = req.body;
+    console.log(courseId, status, studentId)
+    return this.attendancesService.markAttendanceManually(
+      studentId,
+      courseId,
+      status,
+    );
+  }
 }
